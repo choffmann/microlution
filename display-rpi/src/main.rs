@@ -1,51 +1,131 @@
-use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, MonoTextStyle},
-    pixelcolor::Rgb565,
-    prelude::*,
-    primitives::{PrimitiveStyle, Rectangle},
-    text::Text,
+use std::{thread, time::Duration};
+
+use display::ui::{Menu, MenuItem};
+use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
+use embedded_graphics_simulator::{
+    sdl2::Keycode, OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
 };
-use embedded_hal::delay::DelayNs;
+use embedded_hal::{delay::DelayNs, digital::OutputPin, spi};
 use linux_embedded_hal::{
     spidev::{SpiModeFlags, Spidev, SpidevOptions},
     Delay, SpidevDevice,
 };
+use rotary_encoder_embedded::{Direction, RotaryEncoder};
 use rppal::gpio::Gpio;
 use st7735_lcd::{Orientation, ST7735};
 
 const DC_PIN: u8 = 24;
 const RST_PIN: u8 = 25;
-const BL_PIN: u8 = 36;
+const ROTARY_CLK: u8 = 17;
+const ROTARY_DT: u8 = 18;
+const ROTARY_SW: u8 = 27;
 
-const DISP_WIDTH: u32 = 160;
-const DISP_HEIGHT: u32 = 128;
+pub const DISP_WIDTH: u32 = 160;
+pub const DISP_HEIGHT: u32 = 128;
 
 fn main() {
+    let items = vec![
+        MenuItem {
+            title: "Control",
+            selected: true,
+        },
+        MenuItem {
+            title: "Scan",
+            selected: false,
+        },
+        MenuItem {
+            title: "Settings",
+            selected: false,
+        },
+        MenuItem {
+            title: "Info",
+            selected: false,
+        },
+    ];
+
+    let mut menu = Menu::new(items);
+
+    // emulate(&mut menu);
+    st7735(&mut menu);
+}
+
+fn st7735(menu: &mut Menu) {
     let gpio = Gpio::new().expect("Failed to setup gpio");
     let spidev = create_spi().expect("Failed to setup spi device");
     let spi = SpidevDevice(spidev);
 
+    let rotary_dt = gpio.get(ROTARY_DT).unwrap().into_input();
+    let rotary_clk = gpio.get(ROTARY_CLK).unwrap().into_input();
+    let mut rotary_encoder = RotaryEncoder::new(rotary_dt, rotary_clk).into_standard_mode();
+
     let dc_pin = gpio.get(DC_PIN).unwrap().into_output();
     let rst_pin = gpio.get(RST_PIN).unwrap().into_output();
-    let mut bl_pin = gpio.get(BL_PIN).unwrap().into_output();
-    bl_pin.set_high(); // Backlight
+    let mut display = setup_st7735(spi, dc_pin, rst_pin);
+    menu.draw(&mut display).unwrap();
 
-    let mut display = ST7735::new(spi, dc_pin, rst_pin, true, false, DISP_WIDTH, DISP_HEIGHT);
+    loop {
+        match rotary_encoder.update() {
+            Direction::Clockwise => {
+                menu.next_item().unwrap();
+                menu.draw(&mut display).unwrap();
+                thread::sleep(Duration::from_millis(10));
+            }
+            Direction::Anticlockwise => {
+                menu.prev_item().unwrap();
+                menu.draw(&mut display).unwrap();
+                thread::sleep(Duration::from_millis(10));
+            }
+            Direction::None => {}
+        }
+
+        thread::sleep(Duration::from_millis(2));
+    }
+}
+
+fn emulate(menu: &mut Menu) {
+    let mut display = SimulatorDisplay::<Rgb565>::new(Size::new(DISP_WIDTH, DISP_HEIGHT));
+    let output_settings = OutputSettingsBuilder::new().scale(4).build();
+    let mut window = Window::new("Hello World", &output_settings);
+    menu.draw(&mut display).unwrap();
+
+    'running: loop {
+        window.update(&display);
+        for event in window.events() {
+            match event {
+                SimulatorEvent::Quit => break 'running,
+
+                SimulatorEvent::KeyDown { keycode, .. } => {
+                    match keycode {
+                        Keycode::Left => {
+                            menu.prev_item().unwrap();
+                            menu.draw(&mut display).unwrap();
+                        }
+                        Keycode::Right => {
+                            menu.next_item().unwrap();
+                            menu.draw(&mut display).unwrap();
+                        }
+                        _ => {}
+                    };
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+fn setup_st7735<SPI, DC, RST>(spi: SPI, dc: DC, rst: RST) -> ST7735<SPI, DC, RST>
+where
+    SPI: spi::SpiDevice,
+    DC: OutputPin,
+    RST: OutputPin,
+{
+    let mut display = ST7735::new(spi, dc, rst, true, false, DISP_WIDTH, DISP_HEIGHT);
     display.init(&mut Delay).expect("Failed to init display");
 
     display.set_orientation(&Orientation::Landscape).unwrap();
     display.clear(Rgb565::BLACK).unwrap();
 
-    let mut old_value = 0;
-    loop {
-        for i in 0..=100 {
-            draw_progress_bar(&mut display, i, old_value);
-            old_value = i;
-            Delay.delay_ms(50);
-        }
-
-        display.clear(Rgb565::BLACK).unwrap();
-    }
+    display
 }
 
 fn create_spi() -> Result<Spidev, std::io::Error> {
@@ -57,58 +137,4 @@ fn create_spi() -> Result<Spidev, std::io::Error> {
         .build();
     spi.configure(&options)?;
     Ok(spi)
-}
-
-fn draw_progress_bar<D>(display: &mut D, value: u8, old_value: u8)
-where
-    D: DrawTarget<Color = Rgb565>,
-    D::Error: core::fmt::Debug,
-{
-    const BAR_WIDTH: i32 = 100;
-    const BAR_HEIGHT: i32 = 10;
-    const BAR_X: i32 = 3;
-    const BAR_Y: i32 = 10;
-    const TEXT_Y_OFFSET: i32 = 18;
-    const TEXT_WIDTH: u32 = 6;
-
-    let filled_width = (BAR_WIDTH * value as i32) / 100;
-    let old_filled_width = (BAR_WIDTH * old_value as i32) / 100;
-
-    if filled_width > old_filled_width {
-        let new_rect = Rectangle::new(
-            Point::new(BAR_X + old_filled_width, BAR_Y),
-            Size::new((filled_width - old_filled_width) as u32, BAR_HEIGHT as u32),
-        );
-        new_rect
-            .into_styled(PrimitiveStyle::with_fill(Rgb565::GREEN))
-            .draw(display)
-            .unwrap();
-    }
-
-    let text_position = Point::new(BAR_X, BAR_Y + TEXT_Y_OFFSET);
-    let clear_rect = if value.to_string().len() > old_value.to_string().len() {
-        Rectangle::new(
-            Point::new(BAR_X + 77, BAR_Y + TEXT_Y_OFFSET - 7),
-            Size::new(TEXT_WIDTH * 7 as u32, 9),
-        )
-    } else {
-        Rectangle::new(
-            Point::new(BAR_X + 77, BAR_Y + TEXT_Y_OFFSET - 7),
-            Size::new(TEXT_WIDTH * value.to_string().len() as u32, 9),
-        )
-    };
-
-    clear_rect
-        .into_styled(PrimitiveStyle::with_fill(Rgb565::BLACK))
-        .draw(display)
-        .unwrap();
-
-    let hashes = "#".repeat((value / 10) as usize);
-    let spaces = " ".repeat(10 - (value / 10) as usize);
-    let text = format!("[{}{}] {}/100", hashes, spaces, value);
-
-    let style = MonoTextStyle::new(&FONT_6X10, Rgb565::GREEN);
-    Text::new(&text, text_position, style)
-        .draw(display)
-        .unwrap();
 }

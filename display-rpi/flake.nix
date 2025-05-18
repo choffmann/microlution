@@ -41,7 +41,7 @@
           cargo-watch
           rust-analyzer
 
-          cargo-cross
+          SDL2
         ];
 
         env = {

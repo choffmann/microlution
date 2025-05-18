@@ -9,3 +9,7 @@ embedded-hal = "1.0.0"
 linux-embedded-hal = "0.4.0"
 rppal = { version = "0.22.1", features = ["hal"] }
 st7735-lcd = "0.10.0"
+embedded-graphics-simulator = "0.7.0"
+tinybmp = "0.6.0"
+rotary-encoder-embedded = "0.4.0"
+
