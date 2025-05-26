@@ -24,6 +24,15 @@ defmodule Sanga.Board do
     GenServer.call(__MODULE__, {:query, command}, @response_timeout + 500)
   end
 
+  # sets n_motors back to default value so that the board can be used with other software
+  def move_slider(value) when is_integer(value) do
+    multi_query([
+      "n_motors 4",
+      "mr 0 0 0 #{value}",
+      "n_motors 3"
+    ])
+  end
+
   def multi_query(commands) when is_list(commands) and length(commands) > 0 do
     execute_queries(commands, nil)
   end

@@ -19,11 +19,16 @@ case Sanga.Board.query("version") do
   {:error, reason} ->
     IO.puts("Error: #{inspect(reason)}")
 end
-Process.sleep(500)
+
 # Execute three queries in sequence, only getting the final result
-case Sanga.Board.multi_query("n_motors 4", "mr 0 0 0 5000", "mr 0 0 0 -5000", "n_motors 3") do
+case Sanga.Board.multi_query(["n_motors 4", "mr 0 0 0 5000", "n_motors 3"]) do
   {:ok, result} -> IO.puts("Got final result: #{result}")
   {:error, reason} -> IO.puts("Error: #{reason}")
 end
-# Give some time for the UART to finish sending data
+
+case Sanga.Board.move_slider(-5000) do
+  {:ok, result} -> IO.puts("Got final result: #{result}")
+  {:error, reason} -> IO.puts("Error: #{reason}")
+end
+
 Process.sleep(500)
