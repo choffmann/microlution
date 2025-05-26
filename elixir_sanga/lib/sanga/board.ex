@@ -24,6 +24,27 @@ defmodule Sanga.Board do
     GenServer.call(__MODULE__, {:query, command}, @response_timeout + 500)
   end
 
+  def multi_query(commands) when is_list(commands) and length(commands) > 0 do
+    execute_queries(commands, nil)
+  end
+
+  defp execute_queries([command | rest], _) do
+    case query(command) do
+      {:ok, result} ->
+        if rest == [] do
+          # This is the last query, return its result
+          {:ok, result}
+        else
+          # Continue to the next query
+          execute_queries(rest, {:ok, result})
+        end
+
+      error ->
+        # If any query fails, stop and return the error
+        error
+    end
+  end
+
   # GenServer Implementation
   @impl true
   def init(_opts) do
@@ -55,6 +76,13 @@ defmodule Sanga.Board do
   end
 
   @impl true
+  # Handle UART errors
+  def handle_info({:circuits_uart, _port, {:error, reason}}, state) do
+    IO.puts("! Serial error: #{inspect(reason)}")
+    {:noreply, state}
+  end
+
+  # Handle responses when there's an active caller
   def handle_info({:circuits_uart, _port, data}, %{current_caller: caller} = state)
       when not is_nil(caller) do
     # Log the response for debugging
@@ -68,12 +96,14 @@ defmodule Sanga.Board do
     {:noreply, new_state}
   end
 
+  # Handle unexpected responses (no active query)
   def handle_info({:circuits_uart, _port, data}, state) do
     # No pending query, just log the data
     IO.puts("Unexpected Sanga response: #{inspect(data)}")
     {:noreply, state}
   end
 
+  # Handle query timeouts for active queries
   def handle_info(:query_timeout, %{current_caller: caller} = state) when not is_nil(caller) do
     # Reply with timeout error
     GenServer.reply(caller, {:error, :timeout})
@@ -83,13 +113,9 @@ defmodule Sanga.Board do
     {:noreply, new_state}
   end
 
+  # Handle orphaned timeout messages
   def handle_info(:query_timeout, state) do
     # No active query or already handled
-    {:noreply, state}
-  end
-
-  def handle_info({:circuits_uart, _port, {:error, reason}}, state) do
-    IO.puts("! Serial error: #{reason}")
     {:noreply, state}
   end
 end
