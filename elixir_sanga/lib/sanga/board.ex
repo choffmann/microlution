@@ -1,8 +1,4 @@
 defmodule Sanga.Board do
-  @moduledoc """
-  Minimal Sanga motor controller interface.
-  Defaults to /dev/ttyAMA0 at 115200 baud.
-  """
   use GenServer
 
   # Hardware defaults
@@ -24,7 +20,6 @@ defmodule Sanga.Board do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
-  @doc "Send query to board and wait for response"
   def query(command) do
     GenServer.call(__MODULE__, {:query, command}, @response_timeout + 500)
   end
