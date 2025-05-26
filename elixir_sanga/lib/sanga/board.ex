@@ -20,6 +20,10 @@ defmodule Sanga.Board do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
+  def stop() do
+    GenServer.call(__MODULE__, :stop)
+  end
+
   def query(command) do
     GenServer.call(__MODULE__, {:query, command}, @response_timeout + 500)
   end
@@ -82,6 +86,20 @@ defmodule Sanga.Board do
   def handle_call({:query, _query}, _from, state) do
     # Another query is already in progress
     {:reply, {:error, :busy}, state}
+  end
+
+  def handle_call(:stop, _from, state) do
+    if state.uart_pid != nil do
+      # Close the serial port
+      :ok = Circuits.UART.close(state.uart_pid)
+      # Stop the UART GenServer process
+      :ok = Circuits.UART.stop(state.uart_pid)
+
+      IO.puts("Sanga board connection closed")
+    end
+
+    # Return success and clear the state
+    {:reply, :ok, %{state | uart_pid: nil, current_query: nil, current_caller: nil}}
   end
 
   @impl true
