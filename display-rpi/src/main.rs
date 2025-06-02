@@ -6,6 +6,7 @@ use display::{
 use embedded_graphics_simulator::{
     sdl2::Keycode, OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
 };
+use embedded_hal::delay::DelayNs;
 use linux_embedded_hal::{
     spidev::{SpiModeFlags, Spidev, SpidevOptions},
     Delay, SpidevDevice,
@@ -30,6 +31,12 @@ fn main() {
     let interface = SPIInterface::new(spi, dc_pin);
     let mut display =
         Ili9341::new(interface, rst_pin, &mut Delay, ili9341::DisplaySize240x320).unwrap();
+
+    display.clear_screen(0x00).unwrap();
+    Delay.delay_ms(1000);
+    display.clear_screen(0x13).unwrap();
+    Delay.delay_ms(1000);
+    display.clear_screen(0x00).unwrap();
 
     if let Ok(status) = display.status() {
         println!("status: {:2x?}", status);
