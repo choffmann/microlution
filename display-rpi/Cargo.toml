@@ -2,14 +2,20 @@
 name = "display"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 
 [dependencies]
 embedded-graphics = "0.8.1"
 embedded-hal = "1.0.0"
 linux-embedded-hal = "0.4.0"
 rppal = { version = "0.22.1", features = ["hal"] }
-st7735-lcd = "0.10.0"
-embedded-graphics-simulator = "0.7.0"
 tinybmp = "0.6.0"
 rotary-encoder-embedded = "0.4.0"
+display-interface = "0.5.0"
+embedded-graphics-simulator = {version = "0.7.0", optional = true}
 
+[features]
+simulator = ["embedded-graphics-simulator"]
+
+[dev-dependencies]
+embedded-graphics-simulator = "0.7.0"

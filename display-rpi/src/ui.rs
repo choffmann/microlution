@@ -2,7 +2,7 @@ use embedded_graphics::{
     mono_font::{iso_8859_3::FONT_6X9, MonoTextStyle},
     pixelcolor::Rgb565,
     prelude::*,
-    primitives::{PrimitiveStyleBuilder, Rectangle, RoundedRectangle},
+    primitives::PrimitiveStyleBuilder,
     text::{Alignment, Text},
 };
 

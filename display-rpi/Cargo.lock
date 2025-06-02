@@ -112,15 +112,21 @@ dependencies = [
 name = "display"
 version = "0.1.0"
 dependencies = [
+ "display-interface",
  "embedded-graphics",
  "embedded-graphics-simulator",
  "embedded-hal 1.0.0",
  "linux-embedded-hal",
  "rotary-encoder-embedded",
  "rppal",
- "st7735-lcd",
  "tinybmp",
 ]
+
+[[package]]
+name = "display-interface"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ba2aab1ef3793e6f7804162debb5ac5edb93b3d650fbcc5aeb72fcd0e6c03a0"
 
 [[package]]
 name = "embedded-graphics"
@@ -572,17 +578,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17db5ecef7e0bebeb8bf8bc4c4b554e05e0205d7008f10bb37787892e7a6507b"
 dependencies = [
  "windows-sys",
-]
-
-[[package]]
-name = "st7735-lcd"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f62bd63569c4bab37b9b8c6cfd72ed6281701cff08eec80bc178f3e56df2872"
-dependencies = [
- "embedded-graphics-core",
- "embedded-hal 1.0.0",
- "nb 1.1.0",
 ]
 
 [[package]]
