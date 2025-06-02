@@ -1,7 +1,3 @@
-use display::{
-    display::ili9341::{self, Ili9341},
-    SPIInterface,
-};
 #[cfg(feature = "simulator")]
 use embedded_graphics_simulator::{
     sdl2::Keycode, OutputSettingsBuilder, SimulatorDisplay, SimulatorEvent, Window,
@@ -12,6 +8,10 @@ use linux_embedded_hal::{
     Delay, SpidevDevice,
 };
 use rppal::gpio::Gpio;
+use scope_ui::{
+    display::ili9341::{self, Ili9341},
+    SPIInterface,
+};
 
 const DC_PIN: u8 = 24;
 const RST_PIN: u8 = 25;
