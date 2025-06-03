@@ -215,3 +215,148 @@ enum Command {
     MemoryWrite = 0x2c,
     SetBrightness = 0x51,
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use core::cell::RefCell;
+    use embedded_hal::delay::DelayNs;
+    use embedded_hal::digital::{Error, ErrorKind, ErrorType, OutputPin};
+    use std::rc::Rc;
+
+    /// Dummy display size for testing
+    struct DummySize;
+
+    impl DisplaySize for DummySize {
+        const WIDTH: u16 = 2;
+        const HEIGHT: u16 = 2;
+    }
+
+    /// Mock implementation of Delay
+    struct DummyDelay;
+    impl DelayNs for DummyDelay {
+        fn delay_ns(&mut self, _ns: u32) {}
+        fn delay_us(&mut self, _us: u32) {}
+        fn delay_ms(&mut self, _ms: u32) {}
+    }
+
+    /// Simple mock reset pin
+    #[derive(Default)]
+    struct DummyPin {
+        pub set_low_called: bool,
+        pub set_high_called: bool,
+    }
+
+    #[derive(Debug)]
+    struct DummyError;
+
+    impl Error for DummyError {
+        fn kind(&self) -> ErrorKind {
+            return ErrorKind::Other;
+        }
+    }
+
+    impl ErrorType for DummyPin {
+        type Error = DummyError;
+    }
+
+    impl OutputPin for DummyPin {
+        fn set_low(&mut self) -> Result<(), Self::Error> {
+            self.set_low_called = true;
+            Ok(())
+        }
+
+        fn set_high(&mut self) -> Result<(), Self::Error> {
+            self.set_high_called = true;
+            Ok(())
+        }
+    }
+
+    /// Records sent commands and data
+    #[derive(Default)]
+    struct DummyInterface {
+        pub commands: RefCell<Vec<u8>>,
+        pub data: RefCell<Vec<u8>>,
+    }
+
+    impl ReadWriteDataCommand for DummyInterface {
+        fn send_commands(&mut self, data: DataFormat<'_>) -> Result<(), DisplayError> {
+            if let DataFormat::U8(slice) = data {
+                self.commands.borrow_mut().extend_from_slice(slice);
+            }
+            Ok(())
+        }
+
+        fn send_data(&mut self, data: DataFormat<'_>) -> Result<(), DisplayError> {
+            match data {
+                DataFormat::U8(slice) => self.data.borrow_mut().extend_from_slice(slice),
+                DataFormat::U16(slice) => {
+                    for val in slice {
+                        self.data.borrow_mut().extend_from_slice(&val.to_be_bytes());
+                    }
+                }
+                DataFormat::U16BEIter(iter) => {
+                    for val in iter {
+                        self.data.borrow_mut().extend_from_slice(&val.to_be_bytes());
+                    }
+                }
+                _ => return Err(DisplayError::DataFormatNotImplemented),
+            }
+            Ok(())
+        }
+
+        fn read_data(&mut self, _cmd: DataFormat<'_>, buf: &mut [u8]) -> Result<(), DisplayError> {
+            buf.fill(0xAB); // dummy value
+            Ok(())
+        }
+    }
+
+    impl ReadWriteDataCommand for Rc<RefCell<DummyInterface>> {
+        fn send_commands(&mut self, data: DataFormat<'_>) -> Result<(), DisplayError> {
+            self.borrow_mut().send_commands(data)
+        }
+
+        fn send_data(&mut self, data: DataFormat<'_>) -> Result<(), DisplayError> {
+            self.borrow_mut().send_data(data)
+        }
+
+        fn read_data(
+            &mut self,
+            cmd: DataFormat<'_>,
+            buffer: &mut [u8],
+        ) -> Result<(), DisplayError> {
+            self.borrow_mut().read_data(cmd, buffer)
+        }
+    }
+
+    #[test]
+    fn test_initialization() {
+        let iface = DummyInterface::default();
+        let reset = DummyPin::default();
+        let mut delay = DummyDelay;
+
+        let display = Ili9341::new(iface, reset, &mut delay, DummySize);
+
+        assert!(display.is_ok());
+
+        let display = display.unwrap();
+        assert_eq!(display.width(), 2);
+        assert_eq!(display.height(), 2);
+    }
+
+    #[test]
+    fn test_clear_screen() {
+        let iface = Rc::new(RefCell::new(DummyInterface::default()));
+        let reset = DummyPin::default();
+        let mut delay = DummyDelay;
+
+        let mut display = Ili9341::new(iface.clone(), reset, &mut delay, DummySize).unwrap();
+
+        display.clear_screen(0x1234).unwrap();
+
+        let binding = iface.borrow();
+        let data = binding.data.borrow();
+
+        let expected_bytes = vec![0x12, 0x34, 0x12, 0x34, 0x12, 0x34, 0x12, 0x34];
+        assert_eq!(&data[data.len() - 8..], &expected_bytes[..]);
+    }
+}
