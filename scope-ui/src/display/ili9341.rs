@@ -1,21 +1,25 @@
 use embedded_hal::delay::DelayNs;
 use embedded_hal::digital::OutputPin;
 
+use super::DataFormat;
 use super::DisplayError;
 use super::ReadWriteDataCommand;
-use super::DataFormat;
 
 type Result<T = (), E = DisplayError> = core::result::Result<T, E>;
 
-/// Trait that defines display size information
+/// Trait that defines the display's dimensions.
+///
+/// Used to configure width and height for different screen models.
+/// Typical implementations are provided as unit structs (e.g. `DisplaySize240x320`).
 pub trait DisplaySize {
-    /// Width in pixels
+    /// Width of the display in pixels
     const WIDTH: usize;
-    /// Height in pixels
+
+    /// Height of the display in pixels
     const HEIGHT: usize;
 }
 
-/// Generic display size of 240x320 pixels
+/// Predefined display size of 240x320 pixels.
 pub struct DisplaySize240x320;
 
 impl DisplaySize for DisplaySize240x320 {
@@ -23,12 +27,22 @@ impl DisplaySize for DisplaySize240x320 {
     const HEIGHT: usize = 320;
 }
 
-/// Specify state of specific mode of operation
+/// Enum indicating the on/off state of display modes like sleep or display power.
 pub enum ModeState {
+    /// Mode is active.
     On,
+    /// Mode is inactive.
     Off,
 }
 
+/// Driver for ILI9341-based TFT displays.
+///
+/// This struct abstracts the SPI interface and reset pin, and provides high-level methods
+/// to control the display.
+///
+/// # Type Parameters
+/// - `IFACE`: Interface that implements the [`ReadWriteDataCommand`] trait.
+/// - `RESET`: Digital output pin used to reset the display.
 pub struct Ili9341<IFACE, RESET> {
     interface: IFACE,
     reset: RESET,
@@ -41,6 +55,15 @@ where
     IFACE: ReadWriteDataCommand,
     RESET: OutputPin,
 {
+    /// Initializes the ILI9341 display with given interface and reset pin.
+    ///
+    /// Performs a hardware and software reset, configures display format and exits sleep mode.
+    ///
+    /// # Arguments
+    /// * `interface` – Interface implementing `ReadWriteDataCommand` (e.g. SPI + DC pin).
+    /// * `reset` – Output pin connected to the RESET line of the display.
+    /// * `delay` – Delay provider (must support millisecond delays).
+    /// * `_display_size` – Type that implements [`DisplaySize`] to configure resolution.
     pub fn new<DELAY, SIZE>(
         interface: IFACE,
         reset: RESET,
@@ -93,51 +116,50 @@ where
         Ok(ili9341)
     }
 
+    /// Sends a command followed by optional arguments to the display.
+    ///
+    /// This is a low-level function and typically used internally.
     fn command(&mut self, cmd: Command, args: Option<&[u8]>) -> Result {
-        self.interface.send_commands(DataFormat::U8(&[cmd as u8]))?;
+        self.interface
+            .send_commands(DataFormat::U8(&[cmd.into()]))?;
         if let Some(data) = args {
-            return self.interface.send_data(DataFormat::U8(data))
+            return self.interface.send_data(DataFormat::U8(data));
         }
         Ok(())
     }
 
+    /// Reads data from the display after sending a command.
     fn read(&mut self, cmd: Command, buf: &mut [u8]) -> Result {
-        self.interface.read_data(DataFormat::U8(&[cmd as u8]), buf)
+        self.interface.read_data(DataFormat::U8(&[cmd.into()]), buf)
     }
 
+    /// Draws pixel data into the display memory using an iterator over 16-bit RGB565 values.
+    ///
+    /// Must be preceded by a `MemoryWrite` command.
     fn write_iter<I: IntoIterator<Item = u16>>(&mut self, data: I) -> Result {
         self.command(Command::MemoryWrite, None)?;
-        self.interface.send_data(DataFormat::U16BEIter(&mut data.into_iter()))
+        self.interface
+            .send_data(DataFormat::U16BEIter(&mut data.into_iter()))
     }
 
+    /// Draws pixel data from a slice of 16-bit RGB565 values.
     fn write_slice(&mut self, data: &[u16]) -> Result {
         self.command(Command::MemoryWrite, None)?;
         self.interface.send_data(DataFormat::U16(data))
     }
 
+    /// Sets the drawing area (window) on the display, defined by top-left and bottom-right coordinates.
+    ///
+    /// Coordinates are inclusive and must be within display bounds.
     fn set_window(&mut self, x0: u16, y0: u16, x1: u16, y1: u16) -> Result {
-        self.command(
-            Command::ColumnAddressSet,
-            Some(&[
-                (x0 >> 8) as u8,
-                (x0 & 0xff) as u8,
-                (x1 >> 8) as u8,
-                (x1 & 0xff) as u8,
-            ]),
-        )?;
-
-        self.command(
-            Command::PageAddressSet,
-            Some(&[
-                (y0 >> 8) as u8,
-                (y0 & 0xff) as u8,
-                (y1 >> 8) as u8,
-                (y1 & 0xff) as u8,
-            ]),
-        )
+        self.command(Command::ColumnAddressSet, Some(&pack_coords(x0, x1)))?;
+        self.command(Command::PageAddressSet, Some(&pack_coords(y0, y1)))
     }
 
-    pub fn draw_raw_iter<I: IntoIterator<Item = u16>>(
+    /// Draws an area of pixels using an iterator over 16-bit RGB565 values.
+    ///
+    /// The target area is defined by `(x0, y0)` to `(x1, y1)`, inclusive.
+    pub fn draw_pixels_iter<I: IntoIterator<Item = u16>>(
         &mut self,
         x0: u16,
         y0: u16,
@@ -149,12 +171,24 @@ where
         self.write_iter(data)
     }
 
-    pub fn draw_raw_slice(&mut self, x0: u16, y0: u16, x1: u16, y1: u16, data: &[u16]) -> Result {
+    /// Draws an area of pixels from a slice of 16-bit RGB565 values.
+    ///
+    /// The length of the slice must match the number of pixels in the target rectangle.
+    pub fn draw_pixels_slice(
+        &mut self,
+        x0: u16,
+        y0: u16,
+        x1: u16,
+        y1: u16,
+        data: &[u16],
+    ) -> Result {
         self.set_window(x0, y0, x1, y1)?;
         self.write_slice(data)
     }
 
-    /// Control the screen sleep mode:
+    /// Enables or disables sleep mode on the display.
+    ///
+    /// Use `ModeState::Off` to wake the display, and `ModeState::On` to enter sleep.
     pub fn sleep_mode(&mut self, mode: ModeState) -> Result {
         match mode {
             ModeState::On => self.command(Command::SleepModeOn, None),
@@ -162,7 +196,7 @@ where
         }
     }
 
-    /// Control the screen display mode
+    /// Enables or disables the display output (power on/off).
     pub fn display_mode(&mut self, mode: ModeState) -> Result {
         match mode {
             ModeState::On => self.command(Command::DisplayOn, None),
@@ -170,36 +204,49 @@ where
         }
     }
 
-    /// Set display brightness to the value between 0 and 255
+    /// Sets the display brightness to a value between 0 and 255.
     pub fn brightness(&mut self, brightness: u8) -> Result {
         self.command(Command::SetBrightness, Some(&[brightness]))
     }
 
+    /// Reads status information from the display.
+    ///
+    /// Returns 5 bytes of raw status data.
     pub fn status(&mut self) -> Result<[u8; 5]> {
         let mut buf = [0u8; 5];
         self.read(Command::StatusInfo, &mut buf)?;
         Ok(buf)
     }
 
-    /// Fill entire screen with specfied color u16 value
+    /// Fills the entire display with a single RGB565 color.
     pub fn clear_screen(&mut self, color: u16) -> Result {
         let color = core::iter::repeat_n(color, self.width * self.height);
-        self.draw_raw_iter(0, 0, self.width as u16, self.height as u16, color)
+        self.draw_pixels_iter(0, 0, self.width as u16, self.height as u16, color)
     }
 }
 
 impl<IFACE, RESET> Ili9341<IFACE, RESET> {
-    /// Get the current screen width. It can change based on the current orientation
+    /// Returns the current width of the display in pixels.
     pub fn width(&self) -> usize {
         self.width
     }
 
-    /// Get the current screen heighth. It can change based on the current orientation
+    /// Returns the current height of the display in pixels.
     pub fn height(&self) -> usize {
         self.height
     }
 }
 
+fn pack_coords(start: u16, end: u16) -> [u8; 4] {
+    [
+        (start >> 8) as u8,
+        (start & 0xff) as u8,
+        (end >> 8) as u8,
+        (end & 0xff) as u8,
+    ]
+}
+
+#[repr(u8)]
 #[derive(Clone, Copy)]
 enum Command {
     SoftwareReset = 0x01,
@@ -215,6 +262,13 @@ enum Command {
     MemoryWrite = 0x2c,
     SetBrightness = 0x51,
 }
+
+impl From<Command> for u8 {
+    fn from(cmd: Command) -> u8 {
+        cmd as u8
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -227,8 +281,8 @@ mod tests {
     struct DummySize;
 
     impl DisplaySize for DummySize {
-        const WIDTH: u16 = 2;
-        const HEIGHT: u16 = 2;
+        const WIDTH: usize = 2;
+        const HEIGHT: usize = 2;
     }
 
     /// Mock implementation of Delay

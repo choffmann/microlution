@@ -102,7 +102,6 @@ where
 
             Ok(())
         }
-        // _ => Err(DisplayError::DataFormatNotImplemented),
     }
 }
 
