@@ -7,6 +7,7 @@ use linux_embedded_hal::{
     spidev::{SpiModeFlags, Spidev, SpidevOptions},
     Delay, SpidevDevice,
 };
+use rotary_encoder_embedded::{Direction, RotaryEncoder};
 use rppal::gpio::Gpio;
 use scope_ui::{
     display::ili9341::{self, Ili9341},
@@ -16,8 +17,8 @@ use scope_ui::{
 
 const DC_PIN: u8 = 24;
 const RST_PIN: u8 = 25;
-// const ROTARY_CLK: u8 = 17;
-// const ROTARY_DT: u8 = 18;
+const ROTARY_CLK: u8 = 17;
+const ROTARY_DT: u8 = 18;
 // const ROTARY_SW: u8 = 27;
 
 pub const DISP_WIDTH: u32 = 160;
@@ -52,8 +53,30 @@ fn main() {
         },
     ];
 
-    let menu = Menu::new(items);
+    let mut menu = Menu::new(items);
     menu.draw(&mut display).unwrap();
+
+    let rotary_dt = gpio.get(ROTARY_DT).unwrap().into_input();
+    let rotary_clk = gpio.get(ROTARY_CLK).unwrap().into_input();
+    let mut rotary_encoder = RotaryEncoder::new(rotary_dt, rotary_clk).into_standard_mode();
+
+    loop {
+        match rotary_encoder.update() {
+            Direction::Clockwise => {
+                menu.next_item().unwrap();
+                menu.draw(&mut display).unwrap();
+                Delay.delay_ms(10);
+            }
+            Direction::Anticlockwise => {
+                menu.prev_item().unwrap();
+                menu.draw(&mut display).unwrap();
+                Delay.delay_ms(10);
+            }
+            Direction::None => {}
+        }
+
+        Delay.delay_ms(10);
+    }
 }
 
 #[cfg(feature = "simulator")]
