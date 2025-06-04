@@ -85,8 +85,9 @@ where
     type Error = D::Error;
 
     fn draw_menu(&mut self, items: &Vec<MenuItem>) -> Result<(), Self::Error> {
-        let display_width = 160;
-        let display_height = 128;
+        // FIXME: not hardcoded values
+        let display_width = 240;
+        let display_height = 320;
 
         let columns = 2;
         let grid_padding_x = 16;
