@@ -1,3 +1,4 @@
+pub mod graphics_core;
 pub mod ili9341;
 
 /// Trait for display interfaces that support both command and data transmission,

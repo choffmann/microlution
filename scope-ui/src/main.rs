@@ -10,6 +10,7 @@ use linux_embedded_hal::{
 use rppal::gpio::Gpio;
 use scope_ui::{
     display::ili9341::{self, Ili9341},
+    ui::{Menu, MenuItem},
     SPIInterface,
 };
 
@@ -32,15 +33,27 @@ fn main() {
     let mut display =
         Ili9341::new(interface, rst_pin, &mut Delay, ili9341::DisplaySize240x320).unwrap();
 
-    display.clear_screen(0x00).unwrap();
-    Delay.delay_ms(1000);
-    display.clear_screen(0x13).unwrap();
-    Delay.delay_ms(1000);
-    display.clear_screen(0x00).unwrap();
+    let items = vec![
+        MenuItem {
+            title: "Control",
+            selected: true,
+        },
+        MenuItem {
+            title: "Scan",
+            selected: false,
+        },
+        MenuItem {
+            title: "Settings",
+            selected: false,
+        },
+        MenuItem {
+            title: "Info",
+            selected: false,
+        },
+    ];
 
-    if let Ok(status) = display.status() {
-        println!("status: {:2x?}", status);
-    }
+    let menu = Menu::new(items);
+    menu.draw(&mut display).unwrap();
 }
 
 #[cfg(feature = "simulator")]
@@ -79,7 +92,6 @@ fn create_spi() -> Result<Spidev, std::io::Error> {
     let mut spi = Spidev::open("/dev/spidev0.0")?;
     let options = SpidevOptions::new()
         .bits_per_word(8)
-        // .max_speed_hz(20_000)
         .max_speed_hz(0x07735940)
         .mode(SpiModeFlags::SPI_MODE_0)
         .build();
