@@ -1,4 +1,31 @@
 defmodule Sanga.Board do
+  @moduledoc """
+  GenServer for communicating with the Sanga motor controller board via serial port.
+
+  This module provides two communication modes:
+
+  ## Persistent Connection Mode
+  Maintains a persistent connection for high-frequency communication:
+  - `start_link/0` - Start the GenServer with persistent connection
+  - `query/1` - Send a single command using persistent connection
+  - `multi_query/1` - Send multiple commands using persistent connection
+  - `move_slider/1` - Move slider using persistent connection
+  - `stop/0` - Stop the GenServer and close connection
+
+  ## Safe Connection Mode
+  Opens/closes connection for each operation, allowing shared access:
+  - `safe_query/1` - Send a single command with temporary connection
+  - `safe_multi_query/1` - Send multiple commands with temporary connections
+  - `safe_move_slider/1` - Move slider with temporary connections
+  - `safe_move_stage_x/1` - Move stage in X direction
+  - `safe_move_stage_y/1` - Move stage in Y direction
+  - `safe_move_stage_z/1` - Move stage in Z direction
+  - `safe_release_stage/0` - Release stage motors
+  - `safe_zero_stage/0` - Zero/home the stage
+
+  Use persistent mode for exclusive access and high performance.
+  Use safe mode when other services also need to access the motor controller.
+  """
   use GenServer
 
   # Hardware defaults
@@ -16,6 +43,12 @@ defmodule Sanga.Board do
   @response_timeout 100_000
 
   # Public API
+
+  # === PERSISTENT CONNECTION METHODS ===
+  # These methods maintain a persistent connection to the serial port for high-frequency communication.
+  # Faster but holds an exclusive lock on the serial port.
+  # Use when you need exclusive access and high performance.
+
   def start_link() do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
@@ -28,6 +61,48 @@ defmodule Sanga.Board do
     GenServer.call(__MODULE__, {:query, command}, @response_timeout + 500)
   end
 
+  # === SAFE CONNECTION METHODS ===
+  # These methods open/close the connection for each operation, allowing other services
+  # to access the serial port. Slower due to connection overhead but plays nicely with
+  # other software that needs to communicate with the motor controller.
+
+  # Safe query that opens/closes connection for each command - allows other services to access the port
+  def safe_query(command) do
+    with {:ok, pid} <- Circuits.UART.start_link(),
+         :ok <- Circuits.UART.open(pid, @default_port, @serial_settings),
+         :ok <- Circuits.UART.write(pid, command) do
+
+      # Wait for response with timeout
+      receive do
+        {:circuits_uart, ^pid, data} ->
+          # Clean up connection
+          Circuits.UART.close(pid)
+          Circuits.UART.stop(pid)
+          {:ok, String.trim(data)}
+
+        {:circuits_uart, ^pid, {:error, reason}} ->
+          # Clean up connection on error
+          Circuits.UART.close(pid)
+          Circuits.UART.stop(pid)
+          {:error, reason}
+      after
+        @response_timeout ->
+          # Clean up connection on timeout
+          Circuits.UART.close(pid)
+          Circuits.UART.stop(pid)
+          {:error, :timeout}
+      end
+    else
+      error ->
+        {:error, "Failed to open serial connection: #{inspect(error)}"}
+    end
+  end
+
+  # Safe version of multi_query using safe_query
+  def safe_multi_query(commands) when is_list(commands) and length(commands) > 0 do
+    execute_safe_queries(commands)
+  end
+
   # sets n_motors back to default value so that the board can be used with other software
   def move_slider(value) when is_integer(value) do
     multi_query([
@@ -37,10 +112,45 @@ defmodule Sanga.Board do
     ])
   end
 
+  # Safe version of move_slider
+  def safe_move_slider(value) when is_integer(value) do
+    safe_multi_query([
+      "n_motors 4",
+      "mr 0 0 0 #{value}",
+      "n_motors 3"
+    ])
+  end
+
+  # === STAGE CONTROL METHODS (SAFE) ===
+  # These methods control the stage movement and status
+
+  # Move stage in X direction
+  def safe_move_stage_x(distance) when is_number(distance) do
+    safe_query("mrx #{distance}")
+  end
+
+  # Move stage in Y direction
+  def safe_move_stage_y(distance) when is_number(distance) do
+    safe_query("mry #{distance}")
+  end
+
+  # Move stage in Z direction
+  def safe_move_stage_z(distance) when is_number(distance) do
+    safe_query("mrz #{distance}")
+  end
+  # Release stage motors (disable holding torque)
+  def safe_release_stage() do
+    safe_query("release")
+  end
+
+  # Zero/home the stage
+  def safe_zero_stage() do
+    safe_query("zero")
+  end
+
   def multi_query(commands) when is_list(commands) and length(commands) > 0 do
     execute_queries(commands, nil)
   end
-
   defp execute_queries([command | rest], _) do
     case query(command) do
       {:ok, result} ->
@@ -50,6 +160,23 @@ defmodule Sanga.Board do
         else
           # Continue to the next query
           execute_queries(rest, {:ok, result})
+        end
+
+      error ->
+        # If any query fails, stop and return the error
+        error
+    end
+  end
+
+  defp execute_safe_queries([command | rest]) do
+    case safe_query(command) do
+      {:ok, result} ->
+        if rest == [] do
+          # This is the last query, return its result
+          {:ok, result}
+        else
+          # Continue to the next query
+          execute_safe_queries(rest)
         end
 
       error ->
