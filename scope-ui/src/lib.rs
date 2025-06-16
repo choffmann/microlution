@@ -3,7 +3,8 @@ use display::{DataFormat, DisplayError, ReadWriteDataCommand};
 use embedded_hal::{digital::OutputPin, spi::SpiDevice};
 
 pub mod display;
-pub mod ui;
+pub mod input;
+pub mod menu;
 pub(crate) const BUFFER_SIZE: usize = 64;
 
 pub struct SPIInterface<SPI, DC> {
