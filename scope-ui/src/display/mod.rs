@@ -1,5 +1,7 @@
 pub mod graphics_core;
 pub mod ili9341;
+#[cfg(feature = "simulator")]
+pub mod simulated;
 
 /// Trait for display interfaces that support both command and data transmission,
 /// including optional read-back functionality for supported controllers.
@@ -91,4 +93,16 @@ pub enum DataFormat<'a> {
 
     /// A mutable iterator yielding 16-bit values to be sent in **little-endian** format.
     U16LEIter(&'a mut dyn Iterator<Item = u16>),
+}
+
+/// Trait that defines the display's dimensions.
+///
+/// Used to configure width and height for different screen models.
+/// Typical implementations are provided as unit structs (e.g. `DisplaySize240x320`).
+pub trait DisplaySize {
+    /// Width of the display in pixels
+    const WIDTH: usize;
+
+    /// Height of the display in pixels
+    const HEIGHT: usize;
 }

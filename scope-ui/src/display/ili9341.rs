@@ -3,28 +3,17 @@ use embedded_hal::digital::OutputPin;
 
 use super::DataFormat;
 use super::DisplayError;
+use super::DisplaySize;
 use super::ReadWriteDataCommand;
 
 type Result<T = (), E = DisplayError> = core::result::Result<T, E>;
 
-/// Trait that defines the display's dimensions.
-///
-/// Used to configure width and height for different screen models.
-/// Typical implementations are provided as unit structs (e.g. `DisplaySize240x320`).
-pub trait DisplaySize {
-    /// Width of the display in pixels
-    const WIDTH: usize;
-
-    /// Height of the display in pixels
-    const HEIGHT: usize;
-}
-
 /// Predefined display size of 240x320 pixels.
-pub struct DisplaySize240x320;
+pub struct DisplaySize320x240;
 
-impl DisplaySize for DisplaySize240x320 {
-    const WIDTH: usize = 240;
-    const HEIGHT: usize = 320;
+impl DisplaySize for DisplaySize320x240 {
+    const WIDTH: usize = 320;
+    const HEIGHT: usize = 240;
 }
 
 /// Enum indicating the on/off state of display modes like sleep or display power.
@@ -101,7 +90,14 @@ where
         delay.delay_ms(120);
 
         // Set display to landscape mode
-        ili9341.command(Command::MemoryAccessControl, Some(&[0x40 | 0x08]))?;
+        // 0x40 | 0x08 => Portrait
+        // 0x20 | 0x08 => Landscape
+        // 0x80 | 0x08 => Portrait flipped
+        // 0x40 | 0x80 | 0x20 | 0x08 => Landscape flipped
+        ili9341.command(
+            Command::MemoryAccessControl,
+            Some(&[0x40 | 0x80 | 0x20 | 0x08]),
+        )?;
 
         // Set pixel format to 16 bits per pixel
         ili9341.command(Command::PixelFormatSet, Some(&[0x55]))?;
