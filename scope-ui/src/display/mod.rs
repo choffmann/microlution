@@ -1,7 +1,5 @@
 pub mod graphics_core;
 pub mod ili9341;
-#[cfg(feature = "simulator")]
-pub mod simulated;
 
 /// Trait for display interfaces that support both command and data transmission,
 /// including optional read-back functionality for supported controllers.

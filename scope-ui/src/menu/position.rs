@@ -1,7 +1,4 @@
-use std::{
-    borrow::Cow,
-    ops::{Add, Sub},
-};
+use std::ops::{Add, Sub};
 
 use embedded_menu::items::menu_item::SelectValue;
 

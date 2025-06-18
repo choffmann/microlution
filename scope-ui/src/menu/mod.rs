@@ -13,7 +13,6 @@ use position::Position;
 use crate::input::{InputEvent, MenuInput};
 
 mod position;
-mod shared;
 
 macro_rules! draw_menu {
     ($menu:expr, $display:expr, $name:expr) => {
