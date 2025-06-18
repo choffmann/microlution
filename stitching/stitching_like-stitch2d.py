@@ -20,9 +20,13 @@ def load_tiles(path):
                 tiles[coords] = {"img": img, "pos": None, "filename": file}
     return tiles
 
-def compute_offset(placed_img, target_img):
+def compute_offset(placed_img, target_img, index):
     sift = cv2.SIFT_create()
+
     kp1, des1 = sift.detectAndCompute(cv2.cvtColor(placed_img, cv2.COLOR_BGR2GRAY), None)
+    sift_img = cv2.drawKeypoints(placed_img, kp1, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    cv2.imwrite("img/5/stitched/sift/sift_" + str(index) + ".png", sift_img)
+
     kp2, des2 = sift.detectAndCompute(cv2.cvtColor(target_img, cv2.COLOR_BGR2GRAY), None)
 
     if des1 is None or des2 is None:
@@ -50,9 +54,11 @@ def build_positions(tiles):
     visited = set([origin])
 
     total = len(tiles)
+    index = 0
     with tqdm(total=total, desc="Positioniere Tiles") as pbar:
         pbar.update(1)
         while queue:
+            index += 1
             current = queue.popleft()
             cx, cy = current
             current_tile = tiles[current]
@@ -76,7 +82,7 @@ def build_positions(tiles):
                 if neighbor_tile["pos"] is not None:
                     continue
 
-                offset, score = compute_offset(current_tile["img"], neighbor_tile["img"])
+                offset, score = compute_offset(current_tile["img"], neighbor_tile["img"], index)
                 if offset is not None and score >= 10:
                     base_x, base_y = current_tile["pos"]
                     dx, dy = offset
@@ -218,9 +224,6 @@ def main():
     stitched_soft_blend = stitch_soft_blend(tiles, "weight_map.png", blend_mask_dir="img/5/stitched/weight_map/")
 
     cv2.imwrite("img/5/stitched/stitched_seams.png", stitched_soft_blend)
-
-    save_params_json(tiles, min_x, min_y)
-    print("Gespeichert: params.json")
 
     # cv2.imshow("Mosaic", mosaic)
     # cv2.waitKey(0)
