@@ -1,21 +1,12 @@
-use embedded_graphics::{pixelcolor::BinaryColor, prelude::Size};
-use embedded_graphics_simulator::{
-    sdl2::Keycode, BinaryColorTheme, OutputSettings, OutputSettingsBuilder, SimulatorDisplay,
-    SimulatorEvent, Window,
-};
-use embedded_hal::digital::OutputPin;
 use linux_embedded_hal::{
     spidev::{SpiModeFlags, Spidev, SpidevOptions},
     SpidevDevice,
 };
-use rppal::{
-    gpio::{self, Gpio},
-    hal::Delay,
-};
+use rppal::{gpio::Gpio, hal::Delay};
 use scope_ui::{
     display::ili9341::{DisplaySize320x240, Ili9341},
-    input::{InputEvent, MenuInput},
-    menu::{MenuEvent, ScopeMenu},
+    input::rotary_encoder::RotaryEncoder,
+    menu::ScopeMenu,
     SPIInterface,
 };
 
@@ -23,7 +14,7 @@ const DC_PIN: u8 = 24;
 const RST_PIN: u8 = 25;
 const ROTARY_CLK: u8 = 17;
 const ROTARY_DT: u8 = 18;
-// const ROTARY_SW: u8 = 27;
+const ROTARY_SW: u8 = 27;
 
 pub const DISP_WIDTH: u32 = 160;
 pub const DISP_HEIGHT: u32 = 128;
@@ -37,65 +28,29 @@ fn main() {
     let interface = SPIInterface::new(spi, dc_pin);
     let mut display = Ili9341::new(interface, rst_pin, &mut Delay, DisplaySize320x240).unwrap();
 
-    let rotary_clk = gpio.get(ROTARY_CLK).unwrap().into_output();
-    let rotary_dt = gpio.get(ROTARY_DT).unwrap().into_output();
+    let rotary_clk = gpio.get(ROTARY_CLK).expect("Invalid CLK pin").into_input();
+    let rotary_dt = gpio.get(ROTARY_DT).expect("Invalid DT pin").into_input();
+    let rotary_sw = gpio.get(ROTARY_SW).expect("Invalid SW pin").into_input();
 
-    // let output_settings = OutputSettingsBuilder::new()
-    //     .theme(BinaryColorTheme::OledBlue)
-    //     .build();
-    // let mut input = InputWindow::new(&output_settings);
-    // let mut display = SimulatorDisplay::new(Size::new(320, 240));
-    // input.window.update(&display);
-    let mut input = RotaryEncoder::new(rotary_clk, rotary_dt);
+    let mut input = RotaryEncoder::new(rotary_clk, rotary_dt, rotary_sw);
     let mut menu = ScopeMenu;
     menu.run(&mut display, &mut input);
 }
 
-pub struct RotaryEncoder<CLK, DT>
-where
-    CLK: OutputPin,
-    DT: OutputPin,
-{
-    clk: CLK,
-    dt: DT,
-    // sw: Option<OutputPin>,
-}
-
-impl<CLK, DT> RotaryEncoder<CLK, DT>
-where
-    CLK: OutputPin,
-    DT: OutputPin,
-{
-    pub fn new(clk: CLK, dt: DT) -> Self {
-        Self { clk, dt }
-    }
-}
-
-impl<CLK, DT> MenuInput for RotaryEncoder<CLK, DT>
-where
-    CLK: OutputPin,
-    DT: OutputPin,
-{
-    fn poll(&mut self) -> Option<InputEvent> {
-        // Implement rotary encoder logic here
-        None
-    }
-}
-
-pub struct InputWindow {
-    window: Window,
-}
-
-impl InputWindow {
-    pub fn new(output_settings: &OutputSettings) -> Self {
-        let window = Window::new("Menu Simulation", output_settings);
-        Self { window }
-    }
-
-    pub fn update(&mut self, display: &SimulatorDisplay<BinaryColor>) {
-        self.window.update(display);
-    }
-}
+// pub struct InputWindow {
+//     window: Window,
+// }
+//
+// impl InputWindow {
+//     pub fn new(output_settings: &OutputSettings) -> Self {
+//         let window = Window::new("Menu Simulation", output_settings);
+//         Self { window }
+//     }
+//
+//     pub fn update(&mut self, display: &SimulatorDisplay<BinaryColor>) {
+//         self.window.update(display);
+//     }
+// }
 
 // impl MenuInput for InputWindow {
 //     fn poll(&mut self) -> Option<InputEvent> {
@@ -127,5 +82,6 @@ fn create_spi() -> Result<Spidev, std::io::Error> {
         .mode(SpiModeFlags::SPI_MODE_0)
         .build();
     spi.configure(&options)?;
+
     Ok(spi)
 }

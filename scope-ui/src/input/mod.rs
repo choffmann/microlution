@@ -1,5 +1,7 @@
 use embedded_graphics::{pixelcolor::BinaryColor, prelude::DrawTarget};
 
+pub mod rotary_encoder;
+
 pub enum InputEvent {
     Up,
     Down,

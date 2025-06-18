@@ -1,4 +1,4 @@
-use std::process::exit;
+use std::{process::exit, time::Duration};
 
 use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 use embedded_menu::{
@@ -119,8 +119,6 @@ impl ScopeMenu {
         let mut data = MenuData::default();
 
         loop {
-            try_clear_display(display);
-
             match data.current_view {
                 MenuView::MainMenu => main_menu(display, input, &mut state, &mut data),
                 MenuView::Control => control_menu(display, input, &mut state, &mut data),
@@ -129,15 +127,17 @@ impl ScopeMenu {
                     data.current_view = MenuView::MainMenu;
                 }
             }
+
+            std::thread::sleep(Duration::from_micros(1000));
         }
     }
 }
 
-fn try_clear_display<D: DrawTarget<Color = Rgb565>>(display: &mut D) {
-    if let Err(_e) = display.clear(Rgb565::BLACK) {
-        eprintln!("Failed to clear display");
-    }
-}
+// fn try_clear_display<D: DrawTarget<Color = Rgb565>>(display: &mut D) {
+//     if let Err(_e) = display.clear(Rgb565::BLACK) {
+//         eprintln!("Failed to clear display");
+//     }
+// }
 
 fn update_position(pos: &mut Position, dir: ControlAction) {
     let value = pos.value();
