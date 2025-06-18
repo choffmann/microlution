@@ -38,7 +38,12 @@ def compute_offset(placed_img, target_img, index):
 
     if len(good) < 10:
         return None, len(good)
-
+    # Visualisierung der Matches
+    match_vis = cv2.drawMatches(
+        target_img, kp2, placed_img, kp1, good, None,
+        flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS
+    )
+    cv2.imwrite(f"img/5/stitched/sift/matches/matches_{index}.png", match_vis)
     dx = [kp1[m.trainIdx].pt[0] - kp2[m.queryIdx].pt[0] for m in good]
     dy = [kp1[m.trainIdx].pt[1] - kp2[m.queryIdx].pt[1] for m in good]
 
