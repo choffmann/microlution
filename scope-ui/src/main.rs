@@ -20,6 +20,8 @@ pub const DISP_WIDTH: u32 = 160;
 pub const DISP_HEIGHT: u32 = 128;
 
 fn main() {
+    env_logger::init();
+
     let gpio = Gpio::new().expect("Failed to setup gpio");
     let spidev = create_spi().expect("Failed to setup spi device");
     let spi = SpidevDevice(spidev);

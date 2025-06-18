@@ -1,7 +1,6 @@
-use embedded_graphics::{pixelcolor::BinaryColor, prelude::DrawTarget};
-
 pub mod rotary_encoder;
 
+#[derive(Debug)]
 pub enum InputEvent {
     Up,
     Down,
@@ -11,5 +10,4 @@ pub enum InputEvent {
 
 pub trait MenuInput {
     fn poll(&mut self) -> Option<InputEvent>;
-    fn update<D: DrawTarget<Color = BinaryColor>>(&mut self, _display: &mut D) {}
 }

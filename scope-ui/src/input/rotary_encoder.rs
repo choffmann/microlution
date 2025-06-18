@@ -1,5 +1,6 @@
 use std::time::{Duration, Instant};
 
+use log::{debug, info};
 use rppal::gpio::InputPin;
 
 use super::{InputEvent, MenuInput};
@@ -45,6 +46,10 @@ impl MenuInput for RotaryEncoder {
                 } else {
                     InputEvent::Down
                 });
+                debug!(
+                    "received input {:?}. clk: {}, dt: {}",
+                    event, clk_now, dt_now
+                );
             };
         };
 
@@ -54,6 +59,10 @@ impl MenuInput for RotaryEncoder {
             let now = Instant::now();
             if btn_now && now - self.last_click_time > self.min_click_interval {
                 self.last_click_time = now;
+                debug!(
+                    "recieved button click. sw: {:?}, last_click_time: {:?}, min_click_interval: {:?}",
+                    btn_now, self.last_click_time, self.min_click_interval
+                );
                 return Some(InputEvent::Select);
             }
         }
