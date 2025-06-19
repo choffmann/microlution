@@ -1,6 +1,10 @@
 use std::{process::exit, time::Duration};
 
-use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
+use embedded_graphics::{
+    mono_font::ascii::{FONT_10X20, FONT_8X13},
+    pixelcolor::Rgb565,
+    prelude::*,
+};
 use embedded_menu::{
     interaction::{programmed::ProgrammedAdapter, Action, Interaction, Navigation},
     items::MenuItem,
@@ -192,9 +196,14 @@ pub fn main_menu<D, I>(
         MenuItem::new("Info", ">").with_value_converter(|_| MenuEvent::Navigate(MenuView::Info)),
     ];
 
-    let mut menu = Menu::with_style("Microlution", MenuStyle::new(MenuTheme))
-        .add_menu_items(main_menu_items)
-        .build_with_state(*state);
+    let mut menu = Menu::with_style(
+        "Microlution",
+        MenuStyle::new(MenuTheme)
+            .with_font(&FONT_8X13)
+            .with_title_font(&FONT_10X20),
+    )
+    .add_menu_items(main_menu_items)
+    .build_with_state(*state);
 
     draw_menu!(&mut menu, display, "main");
     // input.update(display);
@@ -223,32 +232,37 @@ fn control_menu<D, I>(
     D: DrawTarget<Color = Rgb565>,
     I: MenuInput,
 {
-    let mut menu = Menu::with_style("Control", MenuStyle::new(MenuTheme))
-        .add_item("Back", "<<", |_| MenuEvent::Navigate(MenuView::MainMenu))
-        .add_section_title("Sample Changer")
-        .add_item("  Slider", data.sample_changer_pos.clone(), |_p| {
-            MenuEvent::InputLock(ScopeControlMode::SampleChanger(ControlAction::NoAction))
-        })
-        .add_section_title("Microscope Control")
-        .add_item("  X Axis", data.microscope_x_pos.clone(), |_p| {
-            MenuEvent::InputLock(ScopeControlMode::Microscope(
-                MicroscopeAxis::X,
-                ControlAction::NoAction,
-            ))
-        })
-        .add_item("  Y Axis", data.microscope_y_pos.clone(), |_p| {
-            MenuEvent::InputLock(ScopeControlMode::Microscope(
-                MicroscopeAxis::Y,
-                ControlAction::NoAction,
-            ))
-        })
-        .add_item("  Z Axis", data.microscope_z_pos.clone(), |_p| {
-            MenuEvent::InputLock(ScopeControlMode::Microscope(
-                MicroscopeAxis::Z,
-                ControlAction::NoAction,
-            ))
-        })
-        .build_with_state(*state);
+    let mut menu = Menu::with_style(
+        "Control",
+        MenuStyle::new(MenuTheme)
+            .with_font(&FONT_8X13)
+            .with_title_font(&FONT_10X20),
+    )
+    .add_item("Back", "<<", |_| MenuEvent::Navigate(MenuView::MainMenu))
+    .add_section_title("Sample Changer")
+    .add_item("  Slider", data.sample_changer_pos.clone(), |_p| {
+        MenuEvent::InputLock(ScopeControlMode::SampleChanger(ControlAction::NoAction))
+    })
+    .add_section_title("Microscope Control")
+    .add_item("  X Axis", data.microscope_x_pos.clone(), |_p| {
+        MenuEvent::InputLock(ScopeControlMode::Microscope(
+            MicroscopeAxis::X,
+            ControlAction::NoAction,
+        ))
+    })
+    .add_item("  Y Axis", data.microscope_y_pos.clone(), |_p| {
+        MenuEvent::InputLock(ScopeControlMode::Microscope(
+            MicroscopeAxis::Y,
+            ControlAction::NoAction,
+        ))
+    })
+    .add_item("  Z Axis", data.microscope_z_pos.clone(), |_p| {
+        MenuEvent::InputLock(ScopeControlMode::Microscope(
+            MicroscopeAxis::Z,
+            ControlAction::NoAction,
+        ))
+    })
+    .build_with_state(*state);
 
     draw_menu!(&mut menu, display, "control");
     // input.update(display);
