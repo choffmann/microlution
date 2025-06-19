@@ -1,0 +1,175 @@
+aside{
+    height: 100vh;
+  }
+  
+  aside .toggle{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1.4rem;
+  }
+  
+  aside .toggle .sidebar-header {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  aside .toggle .sidebar-close{
+    padding-right: 1rem;
+    display: none;
+  }
+  /* aside .toggle .sidebar-header img {
+    width: auto;
+    height: auto;
+  } */
+  aside .sidebarz {
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    height: 100vh;
+    position: relative;
+    transition: all 0.3s ease;
+    border-right: 1px solid lightgray;
+    border-left: 1px solid lightgray;
+  }
+
+  aside .sidebarz .logo {
+    padding: 1rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid lightgray;
+  }
+
+
+  
+  /* aside .sidebarz:hover{
+    box-shadow: none;
+  } */
+  
+  aside .sidebarz .links a{
+    display: flex;
+    align-items: center;
+    color: var(--color-info-dark);
+    height: 3.7rem;
+    gap: 1rem;
+    position: relative;
+    margin-left: 2rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+  
+  aside .sidebarz .links a span{
+    font-size: 1.6rem;
+    transition: all 0.3s ease;
+  }
+  
+  /* aside .sidebar a:last-child{
+    position: absolute;
+    bottom: 2rem;
+    width: 100%;
+  } */
+  
+  aside .sidebarz .links a.active{
+    width: 100%;
+    color: var(--color-primary);
+    background-color: var(--color-light);
+    margin-left: 0;
+  }
+  
+  aside .sidebarz a.active::before{
+    content: '';
+    width: 6px;
+    height: 18px;
+    background-color: var(--color-primary);
+  }
+  
+  aside .sidebarz a.active span{
+    color: var(--color-primary);
+    margin-left: calc(1rem - 3px);
+  }
+  
+  aside .sidebarz a:hover {
+    color: var(--color-primary);
+  }
+  
+  aside .sidebarz a:hover span {
+    margin-left: 0.6rem;
+  }
+
+  aside .hide-desktop{
+    visibility: hidden;
+  }
+
+  @media screen and (max-width: 1200px) {
+  
+    aside .sidebar{
+        height: 60vh;
+    }
+    
+    aside .logo h2{
+        display: none;
+    }
+  
+    aside .sidebar h3{
+        display: none;
+    }
+  
+    aside .sidebar a{
+        width: 5.6rem;
+    }
+  
+    aside .sidebar a:last-child{
+        position: relative;
+        margin-top: 1.8rem;
+    }
+
+}
+
+@media screen and (max-width: 768px) {
+    
+    aside{
+        position: fixed;
+        background-color: var(--color-white);
+        width: 15rem;
+        z-index: 3;
+        box-shadow: 1rem 3rem 4rem var(--color-light);
+        height: 100vh;
+        left: -100%;
+        display: none;
+        animation: showMenu 0.4s ease forwards;
+    }
+  
+    @keyframes showMenu {
+        to{
+            left: 0;
+        }
+    }
+  
+    aside .logo h2{
+        display: inline;
+    }
+  
+    aside .sidebarz h3{
+        display: inline;
+    }
+  
+    aside .sidebarz a{
+        width: 100%;
+        height: 3.4rem;
+    }
+  
+    /* aside .sidebarz a:last-child{
+        position: absolute;
+        bottom: 5rem;
+    } */
+  
+    aside .toggle .close{
+        display: inline-block;
+        cursor: pointer;
+    }
+
+    aside .hide-desktop {
+      visibility: visible;
+    }
+}
