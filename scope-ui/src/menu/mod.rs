@@ -1,4 +1,4 @@
-use std::{process::exit, time::Duration};
+use std::{fmt::Debug, process::exit, time::Duration};
 
 use embedded_graphics::{
     mono_font::ascii::{FONT_10X20, FONT_8X13},
@@ -12,7 +12,7 @@ use embedded_menu::{
     theme::Theme,
     Menu, MenuState, MenuStyle,
 };
-use log::info;
+use log::{error, info};
 use position::Position;
 
 use crate::input::{InputEvent, MenuInput};
@@ -116,12 +116,14 @@ pub struct ScopeMenu;
 impl ScopeMenu {
     pub fn run<D, I>(&mut self, display: &mut D, input: &mut I)
     where
-        D: DrawTarget<Color = Rgb565>,
+        D: DrawTarget<Color = Rgb565, Error: Debug>,
         I: MenuInput,
     {
         let mut state: MenuState<ProgrammedAdapter<MenuEvent>, StaticPosition, Line> =
             Default::default();
         let mut data = MenuData::default();
+
+        try_clear_display(display);
 
         loop {
             match data.current_view {
@@ -140,7 +142,7 @@ impl ScopeMenu {
 
 fn try_clear_display<D: DrawTarget<Color = Rgb565>>(display: &mut D) {
     if let Err(_e) = display.clear(Rgb565::BLACK) {
-        eprintln!("Failed to clear display");
+        error!("Failed to clear display");
     }
 }
 
@@ -202,7 +204,7 @@ pub fn main_menu<D, I>(
     state: &mut MenuState<ProgrammedAdapter<MenuEvent>, StaticPosition, Line>,
     data: &mut MenuData,
 ) where
-    D: DrawTarget<Color = Rgb565>,
+    D: DrawTarget<Color = Rgb565, Error: Debug>,
     I: MenuInput,
 {
     let main_menu_items = vec![
@@ -223,8 +225,10 @@ pub fn main_menu<D, I>(
     .add_menu_items(main_menu_items)
     .build_with_state(*state);
 
-    draw_menu!(&mut menu, display, "main");
-    // input.update(display);
+    menu.update(display);
+    let _ = menu
+        .draw(display)
+        .map_err(|e| error!("Failed to draw menu to display: {:?}", e));
 
     let event = match input.poll() {
         Some(InputEvent::Up) => menu.interact(Interaction::Navigation(Navigation::Previous)),
@@ -248,7 +252,7 @@ fn control_menu<D, I>(
     state: &mut MenuState<ProgrammedAdapter<MenuEvent>, StaticPosition, Line>,
     data: &mut MenuData,
 ) where
-    D: DrawTarget<Color = Rgb565>,
+    D: DrawTarget<Color = Rgb565, Error: Debug>,
     I: MenuInput,
 {
     let mut menu = Menu::with_style(
@@ -283,8 +287,10 @@ fn control_menu<D, I>(
     })
     .build_with_state(*state);
 
-    draw_menu!(&mut menu, display, "control");
-    // input.update(display);
+    menu.update(display);
+    let _ = menu
+        .draw(display)
+        .map_err(|e| error!("Failed to draw menu to display: {:?}", e));
 
     let event = match input.poll() {
         Some(InputEvent::Up) => {
