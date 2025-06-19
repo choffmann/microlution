@@ -20,7 +20,7 @@ defmodule Server.Api do
     end
   end
 
-  def esp_cam_ip_address(), do: "192.168.188.55"
+  def esp_cam_ip_address(), do: "192.168.4.12"
 
   def esp32_cam_stream, do: "http://#{esp_cam_ip_address()}/stream"
   def esp32_cam_capture, do: "http://#{esp_cam_ip_address()}/capture"
