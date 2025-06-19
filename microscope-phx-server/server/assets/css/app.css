@@ -1,0 +1,75 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+@import "sidebar";
+@import "config";
+@import "bootstrap/dist/css/bootstrap.min.css";
+
+@font-face {
+  font-family: "bootstrap-icons";
+  src: url("/assets/fonts/bootstrap-icons.woff2") format("woff2"),
+       url("/assets/fonts/bootstrap-icons.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
+
+.bi {
+  font-family: "bootstrap-icons" !important;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  display: inline-block;
+  text-decoration: none;
+}
+
+/* This file is for your main application CSS */
+main{
+  }
+  
+.containerz{
+  display: grid;
+  width: 100%;
+  padding-left: 0rem;
+  margin: 0 auto;
+  gap: 0rem;
+  grid-template-columns: 16rem auto;
+  height: 100%;
+}
+
+.container {
+  position: relative;
+  display: inline-block;
+}
+
+#myImage {
+  display: block;
+}
+
+#myCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none; /* Makes sure clicks go through to the image if needed */
+}
+
+.stream-img {
+  -webkit-transform: scaleX(-1);
+  transform: scaleX(-1);
+  object-fit: contain;
+}
+
+.minimap-stream-img {
+  clip-path: inset(0px 75px 0px 35px);
+  transform: rotate(90deg);
+  object-fit: contain;
+  object-position: 30% 0; 
+  background-color: aqua;
+  max-width: 500px;
+  max-height: 500px;
+}
+
+.sidebar-2 {
+  max-width: 120rem;
+}
