@@ -12,6 +12,7 @@ use embedded_menu::{
     theme::Theme,
     Menu, MenuState, MenuStyle,
 };
+use log::info;
 use position::Position;
 
 use crate::input::{InputEvent, MenuInput};
@@ -137,11 +138,11 @@ impl ScopeMenu {
     }
 }
 
-// fn try_clear_display<D: DrawTarget<Color = Rgb565>>(display: &mut D) {
-//     if let Err(_e) = display.clear(Rgb565::BLACK) {
-//         eprintln!("Failed to clear display");
-//     }
-// }
+fn try_clear_display<D: DrawTarget<Color = Rgb565>>(display: &mut D) {
+    if let Err(_e) = display.clear(Rgb565::BLACK) {
+        eprintln!("Failed to clear display");
+    }
+}
 
 fn update_position(pos: &mut Position, dir: ControlAction) {
     let value = pos.value();
@@ -157,9 +158,16 @@ fn update_position(pos: &mut Position, dir: ControlAction) {
 
 pub fn handle_event(event: MenuEvent, data: &mut MenuData) {
     match event {
-        MenuEvent::Navigate(view) => data.current_view = view,
+        MenuEvent::Navigate(view) => {
+            info!("switching to view {:?}", view);
+            data.current_view = view
+        }
         MenuEvent::ControlMode(mode) => match mode {
             ScopeControlMode::SampleChanger(dir) => {
+                info!(
+                    "control sample changer. pos: {:?}, dir: {:?}",
+                    data.sample_changer_pos, dir
+                );
                 update_position(&mut data.sample_changer_pos, dir);
             }
             ScopeControlMode::Microscope(axis, dir) => {
@@ -168,11 +176,21 @@ pub fn handle_event(event: MenuEvent, data: &mut MenuData) {
                     MicroscopeAxis::Y => &mut data.microscope_y_pos,
                     MicroscopeAxis::Z => &mut data.microscope_z_pos,
                 };
+                info!(
+                    "control sample changer. pos: {:?}, dir: {:?}",
+                    data.sample_changer_pos, dir
+                );
                 update_position(pos, dir);
             }
         },
-        MenuEvent::InputLock(v) => data.lock_input = Some(v),
-        MenuEvent::InputUnlock => data.lock_input = None,
+        MenuEvent::InputLock(v) => {
+            info!("Lock input. scope: {:?}", v);
+            data.lock_input = Some(v)
+        }
+        MenuEvent::InputUnlock => {
+            info!("Unlock input");
+            data.lock_input = None
+        }
         MenuEvent::Quit => exit(0),
         MenuEvent::Nothing => {}
     }
@@ -217,6 +235,7 @@ pub fn main_menu<D, I>(
     };
 
     if let Some(event) = event {
+        try_clear_display(display);
         handle_event(event, data);
     }
 
@@ -308,6 +327,7 @@ fn control_menu<D, I>(
     };
 
     if let Some(event) = event {
+        try_clear_display(display);
         handle_event(event, data);
     }
 
