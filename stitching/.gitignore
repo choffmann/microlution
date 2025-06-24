@@ -1,0 +1,11 @@
+venv/
+
+img/
+
+*.jpg
+*.jpeg
+*.png
+
+.vscode/
+*.code-workspace
+
