@@ -22,6 +22,7 @@ defmodule Sanga.Board do
   - `safe_move_stage_z/1` - Move stage in Z direction
   - `safe_release_stage/0` - Release stage motors
   - `safe_zero_stage/0` - Zero/home the stage
+  - `port_available?/0` - Check if serial port is available
 
   Use persistent mode for exclusive access and high performance.
   Use safe mode when other services also need to access the motor controller.
@@ -65,36 +66,62 @@ defmodule Sanga.Board do
   # These methods open/close the connection for each operation, allowing other services
   # to access the serial port. Slower due to connection overhead but plays nicely with
   # other software that needs to communicate with the motor controller.
-
   # Safe query that opens/closes connection for each command - allows other services to access the port
   def safe_query(command) do
-    with {:ok, pid} <- Circuits.UART.start_link(),
-         :ok <- Circuits.UART.open(pid, @default_port, @serial_settings),
-         :ok <- Circuits.UART.write(pid, command) do
+    pid = nil
 
-      # Wait for response with timeout
-      receive do
-        {:circuits_uart, ^pid, data} ->
-          # Clean up connection
-          Circuits.UART.close(pid)
-          Circuits.UART.stop(pid)
-          {:ok, String.trim(data)}
+    try do
+      with {:ok, uart_pid} <- Circuits.UART.start_link(),
+           :ok <- Circuits.UART.open(uart_pid, @default_port, @serial_settings),
+           :ok <- Circuits.UART.write(uart_pid, command) do
 
-        {:circuits_uart, ^pid, {:error, reason}} ->
-          # Clean up connection on error
-          Circuits.UART.close(pid)
-          Circuits.UART.stop(pid)
-          {:error, reason}
-      after
-        @response_timeout ->
-          # Clean up connection on timeout
-          Circuits.UART.close(pid)
-          Circuits.UART.stop(pid)
-          {:error, :timeout}
+        pid = uart_pid
+
+        # Wait for response with timeout
+        receive do
+          {:circuits_uart, ^uart_pid, data} ->
+            {:ok, String.trim(data)}
+
+          {:circuits_uart, ^uart_pid, {:error, reason}} ->
+            {:error, reason}
+        after
+          @response_timeout ->
+            {:error, :timeout}
+        end      else
+        error ->
+          {:error, "Failed to open serial connection: #{inspect(error)}"}
       end
-    else
-      error ->
-        {:error, "Failed to open serial connection: #{inspect(error)}"}
+    after
+      # Always clean up the UART connection, regardless of success or failure
+      if pid do
+        cleanup_uart_connection(pid)
+      end
+    end
+  end
+
+  # Helper function to ensure proper cleanup of UART connection
+  defp cleanup_uart_connection(pid) do
+    try do
+      # Close the serial port first
+      case Circuits.UART.close(pid) do
+        :ok -> :ok
+        {:error, :not_open} -> :ok  # Already closed
+        error ->
+          IO.puts("Warning: Failed to close UART: #{inspect(error)}")
+      end
+
+      # Stop the UART process
+      case Circuits.UART.stop(pid) do
+        :ok -> :ok
+        error ->
+          IO.puts("Warning: Failed to stop UART process: #{inspect(error)}")
+      end
+
+      # Give the system a moment to fully release the port
+      Process.sleep(5)
+    catch
+      kind, reason ->
+        IO.puts("Warning: Exception during UART cleanup: #{kind} - #{inspect(reason)}")
     end
   end
 
@@ -182,6 +209,24 @@ defmodule Sanga.Board do
       error ->
         # If any query fails, stop and return the error
         error
+    end
+  end
+  # Utility function to check if the serial port is available
+  def port_available?() do
+    case Circuits.UART.start_link() do
+      {:ok, pid} ->
+        case Circuits.UART.open(pid, @default_port, @serial_settings) do
+          :ok ->
+            cleanup_uart_connection(pid)
+            true
+          error ->
+            cleanup_uart_connection(pid)
+            IO.puts("Port unavailable: #{inspect(error)}")
+            false
+        end
+      error ->
+        IO.puts("Failed to start UART: #{inspect(error)}")
+        false
     end
   end
 
