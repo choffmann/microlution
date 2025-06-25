@@ -137,7 +137,7 @@ fn try_clear_display<D: DrawTarget<Color = Rgb565>>(display: &mut D) {
     }
 }
 
-fn update_position(pos: &mut Position, dir: ControlAction) {
+fn update_position(pos: &mut Position, dir: &ControlAction) {
     let value = pos.value();
     if value == 0 && matches!(dir, ControlAction::Decrease) {
         return;
@@ -147,6 +147,10 @@ fn update_position(pos: &mut Position, dir: ControlAction) {
         ControlAction::Decrease => pos.set_value(value.wrapping_sub(1)),
         ControlAction::NoAction => {}
     }
+}
+
+fn send_microscope_axis(pos: &Position, _dir: &ControlAction) {
+    debug!("sending request axis change {:?}", pos)
 }
 
 pub fn handle_event(event: MenuEvent, data: &mut MenuData) {
@@ -161,7 +165,7 @@ pub fn handle_event(event: MenuEvent, data: &mut MenuData) {
                     "control sample changer. pos: {:?}, dir: {:?}",
                     data.sample_changer_pos, dir
                 );
-                update_position(&mut data.sample_changer_pos, dir);
+                update_position(&mut data.sample_changer_pos, &dir);
             }
             ScopeControlMode::Microscope(axis, dir) => {
                 let pos = match axis {
@@ -173,7 +177,8 @@ pub fn handle_event(event: MenuEvent, data: &mut MenuData) {
                     "control sample changer. pos: {:?}, dir: {:?}",
                     data.sample_changer_pos, dir
                 );
-                update_position(pos, dir);
+                update_position(pos, &dir);
+                send_microscope_axis(&pos, &dir);
             }
         },
         MenuEvent::InputLock(v) => {
@@ -216,12 +221,8 @@ pub fn main_menu<D, I>(
     .add_menu_items(main_menu_items)
     .build_with_state(*state);
 
-    menu.update(display);
-    let _ = menu
-        .draw(display)
-        .map_err(|e| error!("Failed to draw menu to display: {:?}", e));
-
-    let event = match input.poll() {
+    let event = input.poll();
+    let event = match event {
         Some(InputEvent::Up) => menu.interact(Interaction::Navigation(Navigation::Previous)),
         Some(InputEvent::Down) => menu.interact(Interaction::Navigation(Navigation::Next)),
         Some(InputEvent::Select) => menu.interact(Interaction::Action(Action::Select)),
@@ -232,6 +233,9 @@ pub fn main_menu<D, I>(
     if let Some(event) = event {
         try_clear_display(display);
         handle_event(event, data);
+
+        menu.update(display);
+        menu.draw(display).unwrap();
     }
 
     *state = menu.state();
@@ -278,12 +282,8 @@ fn control_menu<D, I>(
     })
     .build_with_state(*state);
 
-    menu.update(display);
-    let _ = menu
-        .draw(display)
-        .map_err(|e| error!("Failed to draw menu to display: {:?}", e));
-
-    let event = match input.poll() {
+    let event = input.poll();
+    let event = match event {
         Some(InputEvent::Up) => {
             if let Some(lock) = &data.lock_input {
                 Some(match lock {
@@ -326,6 +326,9 @@ fn control_menu<D, I>(
     if let Some(event) = event {
         try_clear_display(display);
         handle_event(event, data);
+
+        menu.update(display);
+        menu.draw(display).unwrap();
     }
 
     *state = menu.state();

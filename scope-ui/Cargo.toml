@@ -15,4 +15,6 @@ embedded-menu = "0.6.1"
 embedded-layout = "0.4.2"
 log = "0.4.27"
 env_logger = "0.11.8"
+rotary-encoder-embedded = "0.4.0"
+reqwest = "0.12.20"
 

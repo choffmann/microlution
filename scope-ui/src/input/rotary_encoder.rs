@@ -1,5 +1,3 @@
-use std::time::{Duration, Instant};
-
 use embedded_hal::digital::InputPin;
 use log::debug;
 
@@ -9,9 +7,8 @@ pub struct RotaryEncoder<DT, CLK, SW> {
     dt: DT,
     clk: CLK,
     sw: SW,
-    pin_state: [u8; 3],
-    last_click_time: Instant,
-    min_click_interval: Duration,
+    btn_state: u16,
+    rotary_state: [u16; 2],
 }
 
 impl<DT, CLK, SW> RotaryEncoder<DT, CLK, SW>
@@ -25,16 +22,11 @@ where
             dt,
             clk,
             sw,
-            pin_state: [0xFF; 3],
-            last_click_time: Instant::now(),
-            min_click_interval: Duration::from_millis(700),
+            btn_state: 0,
+            rotary_state: [0u16; 2],
         }
     }
 }
-
-const PIN_MASK: u8 = 0x03;
-const PIN_EDGE: u8 = 0x02;
-const DEBOUNCE_MASK: u8 = 0x0f;
 
 impl<DT, CLK, SW> MenuInput for RotaryEncoder<DT, CLK, SW>
 where
@@ -43,37 +35,50 @@ where
     SW: InputPin,
 {
     fn poll(&mut self) -> Option<InputEvent> {
+        const ROT_ENC_TABLE: [u8; 16] = [0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0];
+
         let dt_value = self.dt.is_high().unwrap_or_default();
         let clk_value = self.clk.is_high().unwrap_or_default();
         let sw_value = self.sw.is_low().unwrap_or_default();
 
-        self.pin_state[0] = (self.pin_state[0] << 1) | dt_value as u8;
-        self.pin_state[1] = (self.pin_state[1] << 1) | clk_value as u8;
-
-        let sw_bit = if sw_value { 0 } else { 1 };
-        self.pin_state[2] = (self.pin_state[2] << 1) | sw_bit;
-
-        let a = self.pin_state[0] & PIN_MASK;
-        let b = self.pin_state[1] & PIN_MASK;
-        let sw = self.pin_state[2] & DEBOUNCE_MASK;
-
-        let now = Instant::now();
-        let mut event = None;
-
-        if a == PIN_EDGE && b == 0x00 {
-            debug!("rotary encoder down, a: 0x{:02x}, b: 0x{:02x}", a, b);
-            event = Some(InputEvent::Down);
-        } else if b == PIN_EDGE && a == 0x00 {
-            debug!("rotary encoder up, a: 0x{:02x}, b: 0x{:02x}", a, b);
-            event = Some(InputEvent::Up);
+        self.rotary_state[0] <<= 2;
+        if dt_value {
+            self.rotary_state[0] |= 0x02
         }
+        if clk_value {
+            self.rotary_state[0] |= 0x01
+        }
+        self.rotary_state[0] &= 0x0f;
 
-        if sw == 0x00 && now.duration_since(self.last_click_time) >= self.min_click_interval {
+        self.btn_state = (self.btn_state << 1) | sw_value as u16 | 0xfe00;
+        if self.btn_state == 0xff00 {
             debug!("rotary encoder button click");
-            self.last_click_time = now;
-            event = Some(InputEvent::Select);
+            return Some(InputEvent::Select);
         }
 
-        event
+        if self.rotary_state[0] == 0x0b {
+            debug!("eleven 0x{:2X}", self.rotary_state[0])
+        }
+
+        if self.rotary_state[0] == 0x07 {
+            debug!("seven 0x{:2X}", self.rotary_state[0])
+        }
+
+        if ROT_ENC_TABLE[self.rotary_state[0] as usize] != 0 {
+            self.rotary_state[1] <<= 4;
+            self.rotary_state[1] |= self.rotary_state[0];
+
+            if (self.rotary_state[1] & 0xff) == 0x2b {
+                debug!("rotary encoder up");
+                return Some(InputEvent::Up);
+            }
+
+            if (self.rotary_state[1] & 0xff) == 0x17 {
+                debug!("rotary encoder down");
+                return Some(InputEvent::Down);
+            }
+        }
+
+        None
     }
 }
