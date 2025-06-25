@@ -25,7 +25,7 @@ where
             dt,
             clk,
             sw,
-            pin_state: [0xFF; 3],
+            pin_state: [0u8; 3],
             last_click_time: Instant::now(),
             min_click_interval: Duration::from_millis(700),
         }
@@ -34,7 +34,22 @@ where
 
 const PIN_MASK: u8 = 0x03;
 const PIN_EDGE: u8 = 0x02;
-const DEBOUNCE_MASK: u8 = 0x0f;
+
+enum Direction {
+    Clockwise,
+    CounterClockwise,
+    None,
+}
+
+impl From<u8> for Direction {
+    fn from(s: u8) -> Self {
+        match s {
+            0b0001 | 0b0111 | 0b1000 | 0b1110 => Direction::Clockwise,
+            0b0010 | 0b0100 | 0b1011 | 0b1101 => Direction::CounterClockwise,
+            _ => Direction::None,
+        }
+    }
+}
 
 impl<DT, CLK, SW> MenuInput for RotaryEncoder<DT, CLK, SW>
 where
@@ -55,7 +70,6 @@ where
 
         let a = self.pin_state[0] & PIN_MASK;
         let b = self.pin_state[1] & PIN_MASK;
-        let sw = self.pin_state[2] & DEBOUNCE_MASK;
 
         let now = Instant::now();
         let mut event = None;
@@ -68,12 +82,32 @@ where
             event = Some(InputEvent::Up);
         }
 
-        if sw == 0x00 && now.duration_since(self.last_click_time) >= self.min_click_interval {
+        if self.pin_state[2] == 0x00
+            && now.duration_since(self.last_click_time) >= self.min_click_interval
+        {
             debug!("rotary encoder button click");
             self.last_click_time = now;
-            event = Some(InputEvent::Select);
+            self.pin_state[2] = 0;
+            // event = Some(InputEvent::Select);
         }
 
         event
+
+        // let mut s = self.state & 0b11;
+        // if self.dt.is_low().unwrap() {
+        //     s |= 0b100;
+        // }
+        // if self.clk.is_low().unwrap() {
+        //     s |= 0b1000;
+        // }
+        //
+        // // shift new to old
+        // self.state = s >> 2;
+        //
+        // match s.into() {
+        //     Direction::Clockwise => Some(InputEvent::Down),
+        //     Direction::CounterClockwise => Some(InputEvent::Up),
+        //     Direction::None => None,
+        // }
     }
 }

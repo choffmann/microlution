@@ -12,12 +12,9 @@ use scope_ui::{
 
 const DC_PIN: u8 = 24;
 const RST_PIN: u8 = 25;
-const ROTARY_CLK: u8 = 17;
-const ROTARY_DT: u8 = 18;
+const ROTARY_CLK: u8 = 18;
+const ROTARY_DT: u8 = 17;
 const ROTARY_SW: u8 = 27;
-
-pub const DISP_WIDTH: u32 = 160;
-pub const DISP_HEIGHT: u32 = 128;
 
 fn main() {
     env_logger::init();
