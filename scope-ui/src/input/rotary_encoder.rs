@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use embedded_hal::digital::InputPin;
-use log::{debug, info};
+use log::debug;
 
 use super::{InputEvent, MenuInput};
 
@@ -61,10 +61,10 @@ where
         let mut event = None;
 
         if a == PIN_EDGE && b == 0x00 {
-            info!("rotary encoder down, a: 0x{:02x}, b: 0x{:02x}", a, b);
+            debug!("rotary encoder down, a: 0x{:02x}, b: 0x{:02x}", a, b);
             event = Some(InputEvent::Down);
         } else if b == PIN_EDGE && a == 0x00 {
-            info!("rotary encoder up, a: 0x{:02x}, b: 0x{:02x}", a, b);
+            debug!("rotary encoder up, a: 0x{:02x}, b: 0x{:02x}", a, b);
             event = Some(InputEvent::Up);
         }
 
