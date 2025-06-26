@@ -5,6 +5,7 @@ import json
 import numpy as np
 from tqdm import tqdm
 from collections import deque
+import time
 
 def parse_tile_filename(name):
     match = re.match(r"tile_(\d+)_(\d+)\.(jpg|jpeg|png)", name)
@@ -216,6 +217,7 @@ def correct_seams_in_place(tiles):
 
 
 def main():
+    start_time = time.time()
     folder = "img/5/tiles"
     tiles = load_tiles(folder)
     print("Geladene Tiles:", len(tiles))
@@ -233,6 +235,9 @@ def main():
     # cv2.imshow("Mosaic", mosaic)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
+    end_time = time.time()
+    duration = end_time - start_time
+    print(f"\n✅ Laufzeit: {duration:.2f} Sekunden")
 
 if __name__ == "__main__":
     main()
