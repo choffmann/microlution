@@ -269,51 +269,6 @@ def stitch_soft_blend(tiles, save_weight_map_path=None, blend_mask_dir=None):
     result = canvas / np.clip(weight, 1e-5, None)
     return np.clip(result, 0, 255).astype(np.uint8)
 
-def correct_seams_in_place(tiles):
-    tile_keys = list(tiles.keys())
-    for (x, y) in tile_keys:
-        tile = tiles[(x, y)]
-        img_a = tile["img"]
-        pos_a = tile["pos"]
-        if pos_a is None:
-            continue
-        h_a, w_a = img_a.shape[:2]
-        y1a, x1a, y2a, x2a = pos_a[1], pos_a[0], pos_a[1] + h_a, pos_a[0] + w_a
-
-        for dx, dy in [(1, 0), (0, 1)]:            
-            neighbor_key = (x + dx, y + dy)
-            if neighbor_key not in tiles:
-                continue
-            neighbor = tiles[neighbor_key]
-            img_b = neighbor["img"]
-            pos_b = neighbor["pos"]
-            if pos_b is None:
-                continue
-
-            h_b, w_b = img_b.shape[:2]
-            y1b, x1b, y2b, x2b = pos_b[1], pos_b[0], pos_b[1] + h_b, pos_b[0] + w_b
-
-            x1 = max(x1a, x1b)
-            y1 = max(y1a, y1b)
-            x2 = min(x2a, x2b)
-            y2 = min(y2a, y2b)
-
-            if x2 <= x1 or y2 <= y1:
-                continue
-
-            crop_a = img_a[y1 - y1a:y2 - y1a, x1 - x1a:x2 - x1a]
-            crop_b = img_b[y1 - y1b:y2 - y1b, x1 - x1b:x2 - x1b]
-
-            mean_a = np.mean(crop_a)
-            mean_b = np.mean(crop_b)
-            if mean_a == 0 or mean_b == 0:
-                continue
-
-            gamma = np.log(mean_b / 255.0) / np.log(mean_a / 255.0)
-            corrected = np.power(img_a / 255.0, gamma) * 255.0
-            tile["img"] = np.clip(corrected, 0, 255).astype(np.uint8)
-
-
 def main():
     start_time = time.time()
     folder = "img/5/tiles"
