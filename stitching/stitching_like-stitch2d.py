@@ -50,6 +50,95 @@ def compute_offset(placed_img, target_img, index):
 
     return (int(np.median(dx)), int(np.median(dy))), len(good)
 
+def compute_offset_with_overlap(placed_img, target_img, index, direction, overlap_px=100, debug=False, debug_dir="debug"):
+
+    if debug:
+        os.makedirs(debug_dir, exist_ok=True)
+        os.makedirs(f"{debug_dir}/crops", exist_ok=True)
+        os.makedirs(f"{debug_dir}/keypoints", exist_ok=True)
+        os.makedirs(f"{debug_dir}/keypoints_on_full", exist_ok=True)
+
+    sift = cv2.SIFT_create()
+    h, w = placed_img.shape[:2]
+
+    # Crop-Bereiche basierend auf Richtung
+    if direction == "right":
+        img1_crop = placed_img[:, w - overlap_px:]
+        img2_crop = target_img[:, :overlap_px]
+        offset_img1 = (w - overlap_px, 0)
+        offset_img2 = (0, 0)
+    elif direction == "left":
+        img1_crop = placed_img[:, :overlap_px]
+        img2_crop = target_img[:, w - overlap_px:]
+        offset_img1 = (0, 0)
+        offset_img2 = (w - overlap_px, 0)
+    elif direction == "bottom":
+        img1_crop = placed_img[h - overlap_px:, :]
+        img2_crop = target_img[:overlap_px, :]
+        offset_img1 = (0, h - overlap_px)
+        offset_img2 = (0, 0)
+    elif direction == "top":
+        img1_crop = placed_img[:overlap_px, :]
+        img2_crop = target_img[h - overlap_px:, :]
+        offset_img1 = (0, 0)
+        offset_img2 = (0, h - overlap_px)
+    else:
+        return None, 0
+
+    if direction not in {"left", "right", "top", "bottom"}:
+        return None, 0
+
+    # SIFT auf den Crops
+    gray1 = cv2.cvtColor(img1_crop, cv2.COLOR_BGR2GRAY)
+    gray2 = cv2.cvtColor(img2_crop, cv2.COLOR_BGR2GRAY)
+    kp1, des1 = sift.detectAndCompute(gray1, None)
+    kp2, des2 = sift.detectAndCompute(gray2, None)
+
+    if debug:
+        # Debug: Speichern der Crops
+        cv2.imwrite(f"{debug_dir}/crops/crop1_{index}_{direction}.png", img1_crop)
+        cv2.imwrite(f"{debug_dir}/crops/crop2_{index}_{direction}.png", img2_crop)
+
+        # Debug: Keypoints auf Crops
+        kp_img1 = cv2.drawKeypoints(img1_crop, kp1, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        kp_img2 = cv2.drawKeypoints(img2_crop, kp2, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        cv2.imwrite(f"{debug_dir}/keypoints/kp_crop1_{index}_{direction}.png", kp_img1)
+        cv2.imwrite(f"{debug_dir}/keypoints/kp_crop2_{index}_{direction}.png", kp_img2)
+
+    if des1 is None or des2 is None:
+        return None, 0
+
+    matcher = cv2.BFMatcher()
+    matches = matcher.knnMatch(des2, des1, k=2)
+    good = [m for m, n in matches if m.distance < 0.7 * n.distance]
+
+    if len(good) < 10:
+        return None, len(good)
+
+    if debug:
+        # Debug: Keypoints zurückprojiziert auf Gesamtbild
+        kp1_shifted = [cv2.KeyPoint(k.pt[0] + offset_img1[0], k.pt[1] + offset_img1[1], k.size) for k in kp1]
+        kp2_shifted = [cv2.KeyPoint(k.pt[0] + offset_img2[0], k.pt[1] + offset_img2[1], k.size) for k in kp2]
+
+        full1 = cv2.drawKeypoints(placed_img, kp1_shifted, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        full2 = cv2.drawKeypoints(target_img, kp2_shifted, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        cv2.imwrite(f"{debug_dir}/keypoints_on_full/full1_{index}_{direction}.png", full1)
+        cv2.imwrite(f"{debug_dir}/keypoints_on_full/full2_{index}_{direction}.png", full2)
+
+    dx = [kp1[m.trainIdx].pt[0] - kp2[m.queryIdx].pt[0] for m in good]
+    dy = [kp1[m.trainIdx].pt[1] - kp2[m.queryIdx].pt[1] for m in good]
+
+    if direction == "right":
+        dx = [d + (w - overlap_px) for d in dx]
+    elif direction == "left":
+        dx = [d - (w - overlap_px) for d in dx]
+    elif direction == "bottom":
+        dy = [d + (h - overlap_px) for d in dy]
+    elif direction == "top":
+        dy = [d - (h - overlap_px) for d in dy]
+
+    return (int(np.median(dx)), int(np.median(dy))), len(good)
+
 def build_positions(tiles):
     origin = (0, 0)
     if origin not in tiles:
@@ -74,13 +163,16 @@ def build_positions(tiles):
                 (cx + 1, cy): "right",
                 (cx, cy - 1): "top",
                 (cx, cy + 1): "bottom",
-                (cx - 1, cy - 1): "top-left",
-                (cx + 1, cy - 1): "top-right",
-                (cx - 1, cy + 1): "bottom-left",
-                (cx + 1, cy + 1): "bottom-right",
+                # # Diagonal
+                # (cx - 1, cy - 1): "top-left",
+                # (cx + 1, cy - 1): "top-right",
+                # (cx - 1, cy + 1): "bottom-left",
+                # (cx + 1, cy + 1): "bottom-right",
             }
 
-            for neighbor_coord in neighbors:
+            # print(f"[{index}] Tile {current} prüft Nachbarn: {list(neighbors.keys())}")
+
+            for neighbor_coord, direction in neighbors.items():
                 if neighbor_coord not in tiles:
                     continue
 
@@ -88,12 +180,18 @@ def build_positions(tiles):
                 if neighbor_tile["pos"] is not None:
                     continue
 
-                offset, score = compute_offset(current_tile["img"], neighbor_tile["img"], index)
-                if offset is not None and score >= 10:
+                # offset, score = compute_offset(current_tile["img"], neighbor_tile["img"], index)
+                offset, score = compute_offset_with_overlap(
+                    current_tile["img"], neighbor_tile["img"], index,
+                    direction=direction, overlap_px=800, debug=False
+                )
+
+                # print(f"[{index}] Versuche Nachbar {neighbor_coord} ({direction}) → Score: {score}, Offset: {offset}")
+
+                if offset is not None and score >= 5:
                     base_x, base_y = current_tile["pos"]
                     dx, dy = offset
                     neighbor_tile["pos"] = (base_x + dx, base_y + dy)
-
                     queue.append(neighbor_coord)
                     visited.add(neighbor_coord)
                     pbar.update(1)
@@ -230,7 +328,7 @@ def main():
 
     stitched_soft_blend = stitch_soft_blend(tiles, "weight_map.png", blend_mask_dir="img/5/stitched/weight_map/")
 
-    cv2.imwrite("img/5/stitched/stitched_seams.png", stitched_soft_blend)
+    cv2.imwrite("img/5/stitched/stitched_only_overlap.png", stitched_soft_blend)
 
     # cv2.imshow("Mosaic", mosaic)
     # cv2.waitKey(0)
@@ -241,5 +339,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
