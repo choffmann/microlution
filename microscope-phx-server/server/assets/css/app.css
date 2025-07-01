@@ -13,16 +13,6 @@
   font-style: normal;
 }
 
-.bi {
-  font-family: "bootstrap-icons" !important;
-  font-style: normal;
-  font-weight: normal;
-  font-variant: normal;
-  text-transform: none;
-  line-height: 1;
-  display: inline-block;
-  text-decoration: none;
-}
 
 /* This file is for your main application CSS */
 main{
@@ -61,8 +51,8 @@ main{
 }
 
 .minimap-stream-img {
-  clip-path: inset(0px 75px 0px 35px);
-  transform: rotate(90deg);
+  clip-path: inset(40px 0px 20px 0px);
+  /* transform: rotate(90deg); */
   object-fit: contain;
   object-position: 30% 0; 
   background-color: aqua;

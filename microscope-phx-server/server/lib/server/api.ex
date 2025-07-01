@@ -1,10 +1,10 @@
 defmodule Server.Api do
-  def api_ip_address(), do: "192.168.188.58:5000"
+  def api_ip_address(), do: "192.168.4.1:5000"
   # def api_ip_address() do
   #   {os, _} = :os.type()
 
   #   if os == :win32 do
-  #     "192.168.188.58:5000"
+  #     "192.168.188.178:5000"
   #   else
   #     "microscope.local:5000"
   #   end
@@ -21,6 +21,7 @@ defmodule Server.Api do
   end
 
   def esp_cam_ip_address(), do: "192.168.4.12"
+  # def esp_cam_ip_address(), do: "192.168.188.55"
 
   def esp32_cam_stream, do: "http://#{esp_cam_ip_address()}/stream"
   def esp32_cam_capture, do: "http://#{esp_cam_ip_address()}/capture"

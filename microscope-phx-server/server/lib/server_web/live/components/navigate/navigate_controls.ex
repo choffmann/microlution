@@ -45,7 +45,7 @@ defmodule ServerWeb.Components.Navigate.NavigateControls do
       <div class="col">
         <.live_component module={ServerWeb.Components.Navigate.NavigateHome} id="navigate-home" />
       </div>
-            <div class="col">
+      <div class="col">
         <button              class="btn btn-outline-primary"
               phx-click="move"
               phx-value-direction="up"
@@ -62,43 +62,5 @@ defmodule ServerWeb.Components.Navigate.NavigateControls do
 
   def mount(socket) do
     {:ok, socket}
-  end
-
-  def handle_event("move", params, socket) do
-    # IO.inspect(params)
-    a = %{direction: "up", step_size: 200}
-
-    case HTTPoison.post(
-           "192.168.188.24:4000/api/move",
-           a |> Jason.encode!(),
-           [{"Content-Type", "application/json"}]
-         ) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        body
-
-      _ ->
-        []
-    end
-
-    {:noreply, socket}
-  end
-
-  def handle_event("move-focus", params, socket) do
-    # IO.inspect(params)
-    a = %{step_size: 200}
-
-    case HTTPoison.post(
-           "192.168.188.24:4000/api/move_focus",
-           a |> Jason.encode!(),
-           [{"Content-Type", "application/json"}]
-         ) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        body
-
-      _ ->
-        []
-    end
-
-    {:noreply, socket}
   end
 end

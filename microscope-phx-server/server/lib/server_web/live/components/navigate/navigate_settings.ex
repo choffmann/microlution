@@ -88,6 +88,13 @@ defmodule ServerWeb.Components.Navigate.NavigateSettings do
 
   def handle_event("validate", params, socket) do
     Settings.update(1, params)
+
+    Phoenix.PubSub.broadcast(
+      Server.PubSub,
+      "update-minimap",
+      {:update_minimap, "right", 0}
+    )
+
     {:noreply, socket}
   end
 end

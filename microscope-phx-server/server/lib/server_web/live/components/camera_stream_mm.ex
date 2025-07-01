@@ -38,7 +38,7 @@ defmodule ServerWeb.Components.CameraStreamMm do
           </button>
         </div>
         </div>
-        <div class="overlay mt-3">
+        <div class="overlay mt-0">
        <%= if @stream_mm do %>
           <img class="d-block minimap-stream-img" src={Api.esp32_cam_stream()} alt="MJPEG stream" />
 
@@ -46,7 +46,17 @@ defmodule ServerWeb.Components.CameraStreamMm do
           <img class="d-block minimap-stream-img" src={"/images/minimap.jpg"} alt="MJPEG stream" />
 
        <% end %>
-          <canvas id="myCanvas" class="mt-4" phx-hook="MiniMap" width="240" height="210" style="top: 35px; left: 40px;"></canvas>
+          <canvas
+          id="myCanvas"
+          class=""
+          phx-hook="MiniMap"
+          width="320"
+          height="220"
+          data-boundaryx={@settings.boundary_x}
+          data-boundaryy={@settings.boundary_y}
+          style="top: 34px; left: 0px;"
+          >
+          </canvas>
         </div>
       </div>
     <% else %>
@@ -77,6 +87,7 @@ defmodule ServerWeb.Components.CameraStreamMm do
       |> assign(:image_url, "/images/minimap.jpg")
       |> assign(:show_mm, settings.show_mm)
       |> assign(:stream_mm, settings.stream_mm)
+      |> assign(:settings, settings)
 
     {:ok, socket}
   end

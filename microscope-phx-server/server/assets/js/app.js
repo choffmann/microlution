@@ -42,9 +42,14 @@ hooks.MiniMap = {
     let height = 10
     let canvas_width = canvas.width
     let canvas_height = canvas.height
-    let current_x = (canvas_width / 2) - width / 2;
-    let current_y = (canvas_height / 2) - height / 2;
+    let current_x = (canvas_width / 2) - width / 2 + 4;
+    let current_y = ((canvas_height / 2) - height / 2) + 20 + 4;
     let minimap_step_size_modifier = 400 // 400 = 0.5cm bei 10500 Steps Richtung Runter
+    let border_start_point_x = (canvas_width / 2)
+    let border_start_point_y = (canvas_height / 2) + 20;
+    let border_radius_x = JSON.parse(this.el.dataset.boundaryx);
+    let border_radius_y = JSON.parse(this.el.dataset.boundaryy);
+    let border_radius_offset = 3500;
 
     ctx.beginPath();
     ctx.rect(current_x, current_y, width, height);
@@ -52,21 +57,35 @@ hooks.MiniMap = {
     ctx.strokeStyle = "red";
     ctx.stroke();
 
+    ctx.beginPath();
+    ctx.rect(border_start_point_x - (border_radius_x / minimap_step_size_modifier), border_start_point_y - (border_radius_y / minimap_step_size_modifier), ((border_radius_offset + border_radius_x * 2) /minimap_step_size_modifier), (border_radius_offset + border_radius_y * 2)/minimap_step_size_modifier);
+    ctx.lineWidth = lineWidth;
+    ctx.strokeStyle = "blue";
+    ctx.stroke();
+
     this.handleEvent("update-minimap", (payload) => {
       ctx.clearRect(0,0,500,500)
       ctx.beginPath();
+      border_radius_x = JSON.parse(payload.boundaryx);
+      border_radius_y = JSON.parse(payload.boundaryy);
       current_x += JSON.parse(payload.x / minimap_step_size_modifier);
       current_y += JSON.parse(payload.y / minimap_step_size_modifier);
       ctx.rect(current_x, current_y, width, height);
       ctx.lineWidth = lineWidth;
       ctx.strokeStyle = "red";
       ctx.stroke();
+
+      ctx.beginPath();
+      ctx.rect(border_start_point_x - (border_radius_x / minimap_step_size_modifier), border_start_point_y - (border_radius_y / minimap_step_size_modifier), ((border_radius_offset + border_radius_x * 2) /minimap_step_size_modifier), (border_radius_offset + border_radius_y * 2)/minimap_step_size_modifier);
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = "blue";
+      ctx.stroke();
     })
     this.handleEvent("reset-minimap", (payload) => {
       ctx.clearRect(0,0,500,500)
       ctx.beginPath();
       current_x = (canvas_width / 2) - width / 2;
-      current_y = (canvas_height / 2) - height / 2;
+      current_y = ((canvas_height / 2) - height / 2) + 15;
       ctx.rect(current_x, current_y, width, height);
       ctx.lineWidth = lineWidth;
       ctx.strokeStyle = "red";

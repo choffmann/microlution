@@ -2,42 +2,42 @@ defmodule ServerWeb.Router do
   use ServerWeb, :router
 
   pipeline :browser do
-    plug(:accepts, ["html"])
-    plug(:fetch_session)
-    plug(:fetch_live_flash)
-    plug(:put_root_layout, html: {ServerWeb.Layouts, :root})
-    plug(:protect_from_forgery)
-    plug(:put_secure_browser_headers)
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_live_flash
+    plug :put_root_layout, html: {ServerWeb.Layouts, :root}
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
   end
 
   pipeline :api do
-    plug(:accepts, ["json"])
+    plug :accepts, ["json"]
   end
 
   scope "/", ServerWeb do
-    pipe_through(:browser)
+    pipe_through :browser
 
     # get "/", PageController, :home
-    live("/", ViewLive)
-    live("/view", ViewLive)
-    live("/gallery", GalleryLive)
-    live("/navigate", NavigateLive)
-    live("/capture", CaptureLive)
-    live("/stitching", StitchingLive)
-    live("/automatic", AutomaticLive)
-    live("/storage", StorageLive)
-    live("/settings", SettingsLive)
-    live("/logging", LoggingLive)
-    live("/about", AboutLive)
-    get("/mjpeg", PageController, :proxy)
+    live "/", ViewLive
+    live "/view", ViewLive
+    live "/gallery", GalleryLive
+    live "/navigate", NavigateLive
+    live "/capture", CaptureLive
+    live "/stitching", StitchingLive
+    live "/automatic", AutomaticLive
+    live "/storage", StorageLive
+    live "/settings", SettingsLive
+    live "/logging", LoggingLive
+    live "/about", AboutLive
+    get "/mjpeg", PageController, :proxy
   end
 
   scope "/api", ServerWeb do
-    pipe_through(:api)
+    pipe_through :api
 
-    post("/upload", Esp32CamController, :create)
-    post("/move", SangaboardMoveController, :move)
-    post("/move_focus", SangaboardMoveController, :move_focus)
+    post "/upload", Esp32CamController, :create
+    post "/move", SangaboardMoveController, :move
+    post "/move_focus", SangaboardMoveController, :move_focus
   end
 
   # Other scopes may use custom stacks.
@@ -55,10 +55,10 @@ defmodule ServerWeb.Router do
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do
-      pipe_through(:browser)
+      pipe_through :browser
 
-      live_dashboard("/dashboard", metrics: ServerWeb.Telemetry)
-      forward("/mailbox", Plug.Swoosh.MailboxPreview)
+      live_dashboard "/dashboard", metrics: ServerWeb.Telemetry
+      forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
   end
 end

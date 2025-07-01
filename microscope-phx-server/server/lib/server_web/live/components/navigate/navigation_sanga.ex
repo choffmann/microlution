@@ -107,20 +107,6 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
         Sanga.Board.start_link()
 
         if dir == "forwards" do
-          Sanga.Board.move_slider(-sanga_step_size)
-
-          Settings.update(1, %{
-            "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
-          })
-
-          Phoenix.PubSub.broadcast(
-            Server.PubSub,
-            "update-minimap",
-            {:update_minimap, "right", -sanga_step_size}
-          )
-
-          socket
-        else
           Sanga.Board.move_slider(sanga_step_size)
 
           Settings.update(1, %{
@@ -130,7 +116,21 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
           Phoenix.PubSub.broadcast(
             Server.PubSub,
             "update-minimap",
-            {:update_minimap, "left", sanga_step_size}
+            {:update_minimap, "right", sanga_step_size}
+          )
+
+          socket
+        else
+          Sanga.Board.move_slider(-sanga_step_size)
+
+          Settings.update(1, %{
+            "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
+          })
+
+          Phoenix.PubSub.broadcast(
+            Server.PubSub,
+            "update-minimap",
+            {:update_minimap, "left", -sanga_step_size}
           )
         end
 

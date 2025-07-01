@@ -47,24 +47,39 @@ defmodule ServerWeb.NavigateLive do
 
   def handle_info({:update_minimap, direction, step_size}, socket) do
     IO.inspect("Update Minimap: #{direction} - #{step_size}")
+    settings = Settings.get_settings!(1)
 
     move_in_direction =
       Navigation.get_navigate_direction_minimap(direction, step_size) |> IO.inspect()
 
+    boundaries = %{boundaryx: settings.boundary_x, boundaryy: settings.boundary_y}
+
     {:noreply,
      push_event(
        socket,
        "update-minimap",
-       move_in_direction
+       Map.merge(move_in_direction, boundaries)
      )}
   end
 
   def handle_event("update-minimap", _params, socket) do
+    settings = Settings.get_settings!(1)
+
     {:noreply,
      push_event(
        socket,
        "update-minimap",
-       %{x: Jason.encode!(50), y: Jason.encode!(50)}
+       %{
+         x: Jason.encode!(50),
+         y: Jason.encode!(50),
+         boundaryx: Jason.encode!(settings.boundary_x),
+         boundaryy: Jason.encode!(settings.boundary_y)
+       }
      )}
+  end
+
+  def handle_info({:circuits_uart, "ttyAMA0", "stopped\r"}, socket) do
+    IO.inspect("STOPPED CIRCUITS UART")
+    {:noreply, socket}
   end
 end

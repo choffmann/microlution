@@ -16,7 +16,7 @@ defmodule ServerWeb.SidebarLive do
             menu_name="View"
             title="View"
             href={NavConst.view()}
-            icon="academic-cap"
+            icon="bi-eye"
           />
           <.sidebar_item
             class=""
@@ -58,7 +58,7 @@ defmodule ServerWeb.SidebarLive do
             href={NavConst.stitching()}
             icon="bi-x-diamond fs-2"
           />
-          <.sidebar_item
+          <%!-- <.sidebar_item
             class=""
             menu_active={@menu_active}
             menu_name="Storage"
@@ -89,7 +89,7 @@ defmodule ServerWeb.SidebarLive do
             title="About"
             href={NavConst.about()}
             icon="bi-info-circle-fill fs-2"
-          />
+          /> --%>
         </div>
       </div>
     </aside>

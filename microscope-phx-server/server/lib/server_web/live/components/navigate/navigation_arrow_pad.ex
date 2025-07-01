@@ -165,29 +165,7 @@ defmodule ServerWeb.Components.Navigate.NavigationArrowPad do
     settings = Settings.get_settings!(1)
     step_size = socket.assigns.step_size
 
-    move_in_direction =
-      Navigation.get_navigate_direction(direction, step_size)
-
-    if move_in_direction.y > 0 or move_in_direction.x > 0 do
-      if settings.current_y + move_in_direction.y > settings.boundary_y or
-           settings.current_x + move_in_direction.x > settings.boundary_x do
-        IO.inspect("Boundary Positive X")
-      else
-        if settings.boundary_y - settings.current_y >= move_in_direction.y or
-             settings.boundary_x - settings.current_x >= move_in_direction.x do
-          Navigation.move_in_direction(direction, step_size)
-        end
-      end
-    else
-      if settings.current_y <= -settings.boundary_y or settings.current_x <= -settings.boundary_x do
-        IO.inspect("Boundary Negative X")
-      else
-        if -settings.boundary_y <= settings.current_y + move_in_direction.y or
-             -settings.boundary_x <= settings.current_x + move_in_direction.x do
-          Navigation.move_in_direction(direction, step_size)
-        end
-      end
-    end
+    Navigation.move_stage(direction, step_size)
 
     socket = socket |> assign(:settings, Settings.get_settings!(1))
     {:noreply, socket}
