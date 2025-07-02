@@ -68,34 +68,32 @@ defmodule Sanga.Board do
   # other software that needs to communicate with the motor controller.
   # Safe query that opens/closes connection for each command - allows other services to access the port
   def safe_query(command) do
-    pid = nil
-
-    try do
-      with {:ok, uart_pid} <- Circuits.UART.start_link(),
-           :ok <- Circuits.UART.open(uart_pid, @default_port, @serial_settings),
-           :ok <- Circuits.UART.write(uart_pid, command) do
-
-        pid = uart_pid
-
-        # Wait for response with timeout
-        receive do
-          {:circuits_uart, ^uart_pid, data} ->
-            {:ok, String.trim(data)}
-
-          {:circuits_uart, ^uart_pid, {:error, reason}} ->
-            {:error, reason}
+    case Circuits.UART.start_link() do
+      {:ok, uart_pid} ->
+        try do
+          case Circuits.UART.open(uart_pid, @default_port, @serial_settings) do
+            :ok ->
+              :ok = Circuits.UART.configure(uart_pid, active: true, receiver: self())
+              :ok = Circuits.UART.write(uart_pid, command)
+              receive do
+                {:circuits_uart, _port, data} ->
+                  IO.inspect(data, label: "Received UART data")
+                  {:ok, String.trim(data)}
+                other ->
+                  IO.inspect(other, label: "Received unexpected UART message")
+                  {:error, :unexpected_message}
+              after
+                @response_timeout ->
+                  {:error, :timeout}
+              end
+            error ->
+              {:error, "Failed to open serial connection: #{inspect(error)}"}
+          end
         after
-          @response_timeout ->
-            {:error, :timeout}
-        end      else
-        error ->
-          {:error, "Failed to open serial connection: #{inspect(error)}"}
-      end
-    after
-      # Always clean up the UART connection, regardless of success or failure
-      if pid do
-        cleanup_uart_connection(pid)
-      end
+          cleanup_uart_connection(uart_pid)
+        end
+      error ->
+        {:error, "Failed to start UART: #{inspect(error)}"}
     end
   end
 
