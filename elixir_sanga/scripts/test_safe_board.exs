@@ -4,7 +4,8 @@
 # Test safe query methods
 IO.puts("=== Testing Safe Board Communication ===")
 IO.puts("These methods open/close the connection for each command")
-IO.puts("This allows other services to also access the motor controller\n")
+IO.puts("This protects from accidentally keeping the connection open\n")
+IO.puts("It does not make concurrent access safe, but allows shared access.\n")
 
 # Test single safe query
 IO.puts("1. Testing safe_query:")
