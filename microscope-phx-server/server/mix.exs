@@ -41,9 +41,7 @@ defmodule Server.MixProject do
   #
   # Type `mix help deps` for examples and options.
   defp deps do
-    {os, _} = :os.type()
-
-    deps = [
+    [
       {:phoenix, "~> 1.7.0"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
@@ -71,15 +69,10 @@ defmodule Server.MixProject do
       {:bandit, "~> 1.5"},
       {:httpoison, "~> 2.0"},
       {:twbs_icons,
-       github: "twbs/icons", spars: "icons", tag: "v1.11.3", app: false, compile: false, depth: 1}
-      # {:elixir_sanga, path: "../elixir_sanga"}
+       github: "twbs/icons", spars: "icons", tag: "v1.11.3", app: false, compile: false, depth: 1},
+      {:circuits_uart, ">= 1.5.3"},
+      {:elixir_make, "~> 0.6.0", override: true}
     ]
-
-    if os == :win32 do
-      deps
-    else
-      deps ++ [{:elixir_sanga, path: "../elixir_sanga"}]
-    end
   end
 
   # Aliases are shortcuts or tasks specific to the current project.
