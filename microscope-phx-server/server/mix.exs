@@ -41,6 +41,51 @@ defmodule Server.MixProject do
   #
   # Type `mix help deps` for examples and options.
   defp deps do
+    {os, _} = :os.type()
+
+    deps = [
+      {:phoenix, "~> 1.7.0"},
+      {:phoenix_html, "~> 4.1"},
+      {:phoenix_live_reload, "~> 1.2", only: :dev},
+      {:phoenix_live_view, "~> 1.0"},
+      {:ecto_sql, "~> 3.7"},
+      {:ecto_sqlite3, "~> 0.9.1"},
+      {:floki, ">= 0.30.0", only: :test},
+      {:phoenix_live_dashboard, "~> 0.8.3"},
+      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
+      {:heroicons,
+       github: "tailwindlabs/heroicons",
+       tag: "v2.1.1",
+       sparse: "optimized",
+       app: false,
+       compile: false,
+       depth: 1},
+      {:swoosh, "~> 1.5"},
+      {:finch, "~> 0.13"},
+      {:telemetry_metrics, "~> 1.0"},
+      {:telemetry_poller, "~> 1.0"},
+      {:gettext, "~> 0.26"},
+      {:jason, "~> 1.2"},
+      {:dns_cluster, "~> 0.1.1"},
+      {:bandit, "~> 1.5"},
+      {:httpoison, "~> 2.0"},
+      {:twbs_icons,
+       github: "twbs/icons", spars: "icons", tag: "v1.11.3", app: false, compile: false, depth: 1}
+      # {:elixir_sanga, path: "../elixir_sanga"}
+    ]
+
+    if os == :win32 do
+      deps
+    else
+      deps ++
+        [
+          {:elixir_sanga, path: "../elixir_sanga"},
+          {:circuits_uart, ">= 1.5.3"},
+          {:elixir_make, "~> 0.6.0", override: true}
+        ]
+    end
+
     [
       {:phoenix, "~> 1.7.0"},
       {:phoenix_html, "~> 4.1"},
@@ -69,9 +114,7 @@ defmodule Server.MixProject do
       {:bandit, "~> 1.5"},
       {:httpoison, "~> 2.0"},
       {:twbs_icons,
-       github: "twbs/icons", spars: "icons", tag: "v1.11.3", app: false, compile: false, depth: 1},
-      {:circuits_uart, ">= 1.5.3"},
-      {:elixir_make, "~> 0.6.0", override: true}
+       github: "twbs/icons", spars: "icons", tag: "v1.11.3", app: false, compile: false, depth: 1}
     ]
   end
 
