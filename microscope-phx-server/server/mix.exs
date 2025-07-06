@@ -72,7 +72,6 @@ defmodule Server.MixProject do
       {:httpoison, "~> 2.0"},
       {:twbs_icons,
        github: "twbs/icons", spars: "icons", tag: "v1.11.3", app: false, compile: false, depth: 1}
-      # {:elixir_sanga, path: "../elixir_sanga"}
     ]
 
     if os == :win32 do
@@ -80,7 +79,6 @@ defmodule Server.MixProject do
     else
       deps ++
         [
-          {:elixir_sanga, path: "../elixir_sanga"},
           {:circuits_uart, ">= 1.5.3"},
           {:elixir_make, "~> 0.6.0", override: true}
         ]
