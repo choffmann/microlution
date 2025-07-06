@@ -78,19 +78,6 @@ defmodule Server.Autofocus do
       "current_z" => settings.current_z + focus_step_size
     })
 
-    a = %{x: 0, y: 0, z: focus_step_size}
-
-    case HTTPoison.post(
-           Api.move_stage(),
-           a |> Jason.encode!(),
-           [{"Content-Type", "application/json"}]
-         ) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        body
-
-      _ ->
-        IO.inspect("")
-        []
-    end
+    Sanga.Board.safe_move_stage_z(focus_step_size)
   end
 end

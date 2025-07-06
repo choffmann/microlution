@@ -1,28 +1,27 @@
 defmodule Server.Navigation do
   alias Server.Settings
   alias Server.Api
+  alias Sanga.Board
 
   def move_in_direction(direction, step_size) do
     settings = Settings.get_settings!(1)
-    # IO.inspect(step_size)
-    # Sanga.Board.safe_move_stage_x(step_size)
-    # Sanga.Board.safe_move_stage_y(step_size)
+
     move_in_direction =
       get_navigate_direction(direction, step_size)
 
-    Phoenix.PubSub.broadcast(
-      Server.PubSub,
-      "update-minimap",
-      {:update_minimap, direction, step_size}
-    )
+    # Phoenix.PubSub.broadcast(
+    #   Server.PubSub,
+    #   "update-minimap",
+    #   {:update_minimap, direction, step_size}
+    # )
 
-    Settings.update(1, %{
-      "current_x" => settings.current_x + move_in_direction.x
-    })
+    # Settings.update(1, %{
+    #   "current_x" => settings.current_x + move_in_direction.x
+    # })
 
-    Settings.update(1, %{
-      "current_y" => settings.current_y + move_in_direction.y
-    })
+    # Settings.update(1, %{
+    #   "current_y" => settings.current_y + move_in_direction.y
+    # })
 
     case HTTPoison.post(
            Api.move_to_in_image_coords(),
