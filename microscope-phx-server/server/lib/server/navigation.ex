@@ -108,28 +108,28 @@ defmodule Server.Navigation do
   def get_navigate_direction(direction, step_size) do
     case direction do
       "up-left" ->
-        %{x: -step_size, y: step_size}
+        %{x: -step_size, y: -step_size}
 
       "up" ->
         %{x: -step_size, y: 0}
 
       "up-right" ->
-        %{x: -step_size, y: -step_size}
+        %{x: -step_size, y: step_size}
 
       "down-left" ->
-        %{x: step_size, y: step_size}
+        %{x: step_size, y: -step_size}
 
       "down" ->
         %{x: step_size, y: 0}
 
       "down-right" ->
-        %{x: step_size, y: -step_size}
+        %{x: step_size, y: step_size}
 
       "left" ->
-        %{x: 0, y: step_size}
+        %{x: 0, y: -step_size}
 
       "right" ->
-        %{x: 0, y: -step_size}
+        %{x: 0, y: step_size}
     end
   end
 
