@@ -139,4 +139,8 @@ defmodule ServerWeb.Components.CameraStreamMm do
        %{}
      )}
   end
+
+  def handle_event("validate", _params, socket) do
+    {:noreply, socket}
+  end
 end
