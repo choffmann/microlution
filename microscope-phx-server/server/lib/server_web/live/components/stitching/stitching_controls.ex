@@ -209,7 +209,8 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
         step_size,
         sleep_time,
         autofocus_type,
-        direction
+        direction,
+        y
       ) do
     Enum.map(start_num..end_num, fn x ->
       if stitching_on do
@@ -220,7 +221,12 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
 
         image_id =
           Capture.capture(%{
-            "filename" => "Stitching no. #{x} - #{datetime_string}",
+            "filename" =>
+              "tile_#{if direction == "left" do
+                end_num - x
+              else
+                x
+              end}_#{y}",
             "temporary" => "false",
             "full_resolution" => "false",
             "bayer" => "false",
@@ -240,27 +246,32 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
     end)
   end
 
+  def stitching_run_y(socket) do
+    Enum.map(0..(socket.assigns.y_steps - 1), fn x ->
+      direction =
+        if rem(x, 2) == 0 do
+          "right"
+        else
+          "left"
+        end
+
+      stitching_run_x(
+        start_num = 0,
+        end_num =
+          socket.assigns.x_steps - 1,
+        stitching_on = socket.assigns.stitching_on,
+        step_size = socket.assigns.step_size,
+        sleep_time = socket.assigns.sleep_time,
+        autofocus_type = socket.assigns.autofocus_type,
+        direction = direction,
+        y = x
+      )
+    end)
+  end
+
   def handle_event("start-stitching", _params, socket) do
     image_ids =
-      Enum.map(0..(socket.assigns.y_steps - 1), fn x ->
-        direction =
-          if rem(x, 2) == 0 do
-            "right"
-          else
-            "left"
-          end
-
-        stitching_run_x(
-          start_num = 0,
-          end_num =
-            socket.assigns.x_steps - 1,
-          stitching_on = socket.assigns.stitching_on,
-          step_size = socket.assigns.step_size,
-          sleep_time = socket.assigns.sleep_time,
-          autofocus_type = socket.assigns.autofocus_type,
-          direction = direction
-        )
-      end)
+      stitching_run_y(socket)
       |> List.flatten()
       |> IO.inspect()
 
