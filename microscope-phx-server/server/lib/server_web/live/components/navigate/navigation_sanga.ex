@@ -1,6 +1,7 @@
 defmodule ServerWeb.Components.Navigate.NavigationSanga do
   use ServerWeb, :live_component
   alias Server.Settings
+  alias Sanga.Board
 
   def render(assigns) do
     ~H"""
@@ -107,31 +108,19 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
         Sanga.Board.start_link()
 
         if dir == "forwards" do
-          Sanga.Board.move_slider(sanga_step_size)
+          Sanga.Board.safe_move_slider(sanga_step_size)
 
           Settings.update(1, %{
             "current_sanga_x" => settings.current_sanga_x + sanga_step_size
           })
 
-          Phoenix.PubSub.broadcast(
-            Server.PubSub,
-            "update-minimap",
-            {:update_minimap, "right", sanga_step_size}
-          )
-
           socket
         else
-          Sanga.Board.move_slider(-sanga_step_size)
+          Sanga.Board.safe_move_slider(-sanga_step_size)
 
           Settings.update(1, %{
             "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
           })
-
-          Phoenix.PubSub.broadcast(
-            Server.PubSub,
-            "update-minimap",
-            {:update_minimap, "left", -sanga_step_size}
-          )
         end
 
         Sanga.Board.stop()
