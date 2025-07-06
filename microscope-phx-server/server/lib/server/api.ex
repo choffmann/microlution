@@ -22,7 +22,7 @@ defmodule Server.Api do
 
   def esp_cam_ip_address(), do: "192.168.4.12"
   # def esp_cam_ip_address(), do: "192.168.188.55"
-
+  def open_flexure_site(), do: "http://#{api_ip_address()}"
   def esp32_cam_stream, do: "http://#{esp_cam_ip_address()}/stream"
   def esp32_cam_capture, do: "http://#{esp_cam_ip_address()}/capture"
   def camera_stream(), do: "http://#{api_ip_address()}/api/v2/streams/mjpeg"
