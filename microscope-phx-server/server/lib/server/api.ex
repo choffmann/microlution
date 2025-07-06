@@ -1,5 +1,6 @@
 defmodule Server.Api do
-  def api_ip_address(), do: "192.168.4.1:5000"
+  # def api_ip_address(), do: "192.168.4.1:5000"
+  def api_ip_address(), do: "192.168.188.58:5000"
   # def api_ip_address() do
   #   {os, _} = :os.type()
 
@@ -20,8 +21,8 @@ defmodule Server.Api do
     end
   end
 
-  def esp_cam_ip_address(), do: "192.168.4.12"
-  # def esp_cam_ip_address(), do: "192.168.188.55"
+  # def esp_cam_ip_address(), do: "192.168.4.12"
+  def esp_cam_ip_address(), do: "192.168.188.55"
   def open_flexure_site(), do: "http://#{api_ip_address()}"
   def esp32_cam_stream, do: "http://#{esp_cam_ip_address()}/stream"
   def esp32_cam_capture, do: "http://#{esp_cam_ip_address()}/capture"
