@@ -170,4 +170,8 @@ defmodule ServerWeb.Components.Navigate.NavigationArrowPad do
     socket = socket |> assign(:settings, Settings.get_settings!(1))
     {:noreply, socket}
   end
+
+  def handle_event("validate", _params, socket) do
+    {:noreply, socket}
+  end
 end

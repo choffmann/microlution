@@ -28,4 +28,8 @@ defmodule ServerWeb.Components.Navigate.NavigateHome do
     Navigation.set_home()
     {:noreply, socket |> push_navigate(to: ~p"/navigate")}
   end
+
+  def handle_event("validate", _params, socket) do
+    {:noreply, socket}
+  end
 end

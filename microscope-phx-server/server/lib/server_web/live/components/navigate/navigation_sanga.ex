@@ -141,6 +141,10 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
     {:noreply, socket}
   end
 
+  def handle_event("validate", _params, socket) do
+    {:noreply, socket}
+  end
+
   # def handle_event("sanga-stop", _unsigned_params, socket) do
   #   {os, _} = :os.type()
 

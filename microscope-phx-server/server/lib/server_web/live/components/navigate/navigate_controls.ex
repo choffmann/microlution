@@ -63,4 +63,8 @@ defmodule ServerWeb.Components.Navigate.NavigateControls do
   def mount(socket) do
     {:ok, socket}
   end
+
+  def handle_event("validate", _params, socket) do
+    {:noreply, socket}
+  end
 end
