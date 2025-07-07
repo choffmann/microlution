@@ -30,7 +30,7 @@ defmodule ServerWeb.Components.CameraStreamMm do
             <span class="bi-camera fs-3"></span>
           </button>
           <button class="">
-            <span class="bi-r-square fs-3"></span>
+            <span class="bi-r-square fs-3" phx-click="reset-minimap" phx-target={@myself}></span>
           </button>
                   <div class="d-flex align-items-center">
           <button phx-click="handle-show-mm" phx-target={@myself}>
@@ -54,6 +54,8 @@ defmodule ServerWeb.Components.CameraStreamMm do
           height="220"
           data-boundaryx={@settings.boundary_x}
           data-boundaryy={@settings.boundary_y}
+          data-minimapx={@settings.minimap_x}
+          data-minimapy={@settings.minimap_y}
           style="top: 34px; left: 0px;"
           >
           </canvas>
@@ -132,6 +134,8 @@ defmodule ServerWeb.Components.CameraStreamMm do
   end
 
   def handle_event("reset-minimap", _params, socket) do
+    Settings.update(1, %{"minimap_x" => 0, "minimap_y" => 0})
+
     {:noreply,
      push_event(
        socket,

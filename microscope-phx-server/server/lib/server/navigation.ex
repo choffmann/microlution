@@ -60,13 +60,11 @@ defmodule Server.Navigation do
       %{x: settings.current_x * -1, y: settings.current_y * -1}
 
     Settings.update(1, %{
-      "current_x" => 0
+      "current_x" => 0,
+      "current_y" => 0,
+      "minimap_x" => 0,
+      "minimap_y" => 0
     })
-
-    settings =
-      Settings.update(1, %{
-        "current_y" => 0
-      })
 
     case HTTPoison.post(
            Api.move_to_in_image_coords(),
@@ -96,28 +94,28 @@ defmodule Server.Navigation do
   def get_navigate_direction_sanga(direction, step_size) do
     case direction do
       "up-left" ->
-        %{x: step_size, y: step_size}
-
-      "up" ->
-        %{x: 0, y: step_size}
-
-      "up-right" ->
-        %{x: -step_size, y: step_size}
-
-      "down-left" ->
-        %{x: step_size, y: -step_size}
-
-      "down" ->
-        %{x: 0, y: -step_size}
-
-      "down-right" ->
         %{x: -step_size, y: -step_size}
 
+      "up" ->
+        %{x: 0, y: -step_size}
+
+      "up-right" ->
+        %{x: step_size, y: -step_size}
+
+      "down-left" ->
+        %{x: -step_size, y: step_size}
+
+      "down" ->
+        %{x: 0, y: step_size}
+
+      "down-right" ->
+        %{x: step_size, y: -step_size}
+
       "left" ->
-        %{x: step_size, y: 0}
+        %{x: -step_size, y: 0}
 
       "right" ->
-        %{x: -step_size, y: 0}
+        %{x: -step_size, y: step_size}
     end
   end
 
@@ -153,13 +151,22 @@ defmodule Server.Navigation do
     end
   end
 
-  def get_navigate_direction(direction, step_size) do
+  def get_navigate_direction_minimap(direction, step_size) do
     case direction do
-      "up-left" ->
+      "up" ->
         %{x: -step_size, y: -step_size}
 
-      "up" ->
-        %{x: -step_size, y: 0}
+      "down" ->
+        %{x: step_size, y: step_size}
+
+      "left" ->
+        %{x: step_size, y: -step_size}
+
+      "right" ->
+        %{x: -step_size, y: step_size}
+
+      "up-left" ->
+        %{x: step_size, y: step_size}
 
       "up-right" ->
         %{x: -step_size, y: step_size}
@@ -167,45 +174,36 @@ defmodule Server.Navigation do
       "down-left" ->
         %{x: step_size, y: -step_size}
 
-      "down" ->
-        %{x: step_size, y: 0}
-
       "down-right" ->
-        %{x: step_size, y: step_size}
-
-      "left" ->
-        %{x: 0, y: -step_size}
-
-      "right" ->
-        %{x: 0, y: step_size}
+        %{x: -step_size, y: -step_size}
     end
   end
 
-  def get_navigate_direction_minimap(direction, step_size) do
+  def get_navigate_direction(direction, step_size) do
     case direction do
       "up-left" ->
-        %{x: -step_size, y: -step_size}
-
-      "up" ->
-        %{x: 0, y: -step_size}
-
-      "up-right" ->
-        %{x: step_size, y: -step_size}
-
-      "down-left" ->
-        %{x: -step_size, y: step_size}
-
-      "down" ->
-        %{x: 0, y: step_size}
-
-      "down-right" ->
         %{x: step_size, y: step_size}
 
+      "up" ->
+        %{x: 0, y: step_size}
+
+      "up-right" ->
+        %{x: -step_size, y: step_size}
+
+      "down-left" ->
+        %{x: step_size, y: -step_size}
+
+      "down" ->
+        %{x: 0, y: -step_size}
+
+      "down-right" ->
+        %{x: -step_size, y: -step_size}
+
       "left" ->
-        %{x: -step_size, y: 0}
+        %{x: step_size, y: 0}
 
       "right" ->
-        %{x: step_size, y: 0}
+        %{x: -step_size, y: 0}
     end
   end
 end

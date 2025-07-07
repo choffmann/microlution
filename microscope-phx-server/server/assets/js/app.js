@@ -37,14 +37,16 @@ hooks.MiniMap = {
     const img = document.getElementById("myImage");
     const canvas = document.getElementById("myCanvas");
     const ctx = canvas.getContext("2d");
-    let lineWidth = "3"
-    let width = 10
-    let height = 10
+    let lineWidth = "2"
+    let width = 5
+    let height = 5
     let canvas_width = canvas.width
     let canvas_height = canvas.height
-    let current_x = (canvas_width / 2) - width / 2 + 4;
-    let current_y = ((canvas_height / 2) - height / 2) + 20 + 4;
-    let minimap_step_size_modifier = 400 // 400 = 0.5cm bei 10500 Steps Richtung Runter
+    let minimap_step_size_modifier = 2300 // 2300 = 0.5cm bei 42000 Steps Richtung Runter
+    let current_x = ((canvas_width / 2) - width / 2 + 4);
+    let current_y = (((canvas_height / 2) - height / 2) + 20 + 4);
+    current_x += this.el.dataset.minimapx / minimap_step_size_modifier;
+    current_y += this.el.dataset.minimapy / minimap_step_size_modifier;
     let border_start_point_x = (canvas_width / 2)
     let border_start_point_y = (canvas_height / 2) + 20;
     let border_radius_x = JSON.parse(this.el.dataset.boundaryx);
@@ -84,11 +86,17 @@ hooks.MiniMap = {
     this.handleEvent("reset-minimap", (payload) => {
       ctx.clearRect(0,0,500,500)
       ctx.beginPath();
-      current_x = (canvas_width / 2) - width / 2;
-      current_y = ((canvas_height / 2) - height / 2) + 15;
+      current_x = ((canvas_width / 2) - width / 2 + 4);
+      current_y = (((canvas_height / 2) - height / 2) + 20 + 4);
       ctx.rect(current_x, current_y, width, height);
       ctx.lineWidth = lineWidth;
       ctx.strokeStyle = "red";
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.rect(border_start_point_x - (border_radius_x / minimap_step_size_modifier), border_start_point_y - (border_radius_y / minimap_step_size_modifier), ((border_radius_offset + border_radius_x * 2) /minimap_step_size_modifier), (border_radius_offset + border_radius_y * 2)/minimap_step_size_modifier);
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = "blue";
       ctx.stroke();
     })
   }

@@ -54,6 +54,11 @@ defmodule ServerWeb.NavigateLive do
 
     boundaries = %{boundaryx: settings.boundary_x, boundaryy: settings.boundary_y}
 
+    Settings.update(1, %{
+      "minimap_x" => settings.minimap_x + move_in_direction.x,
+      "minimap_y" => settings.minimap_y + move_in_direction.y
+    })
+
     {:noreply,
      push_event(
        socket,
