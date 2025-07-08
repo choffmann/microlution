@@ -59,6 +59,20 @@ defmodule Sanga.Board do
   def safe_move_slider(value) when is_integer(value),
     do: safe_multi_query(["n_motors 4", "mr 0 0 0 #{value}", "n_motors 3"])
 
+  @doc "Move all 4 axes with temporary UART connections."
+  @doc "Accepts either 4 separate numbers or a keyword list with axis values."
+  def safe_move_all_axes(x, y, z, s)
+      when is_number(x) and is_number(y) and is_number(z) and is_number(s),
+      do: safe_multi_query(["n_motors 4", "mr #{x} #{y} #{z} #{s}", "n_motors 3"])
+
+  def safe_move_all_axes(axes) when is_list(axes) do
+    x = Keyword.get(axes, :x, 0)
+    y = Keyword.get(axes, :y, 0)
+    z = Keyword.get(axes, :z, 0)
+    s = Keyword.get(axes, :s, 0)
+    safe_multi_query(["n_motors 4", "mr #{x} #{y} #{z} #{s}", "n_motors 3"])
+  end
+
   @doc "Move stage in X direction."
   def safe_move_stage_x(distance) when is_number(distance),
     do: safe_query("mrx #{distance}")
