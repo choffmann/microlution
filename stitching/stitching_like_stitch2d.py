@@ -1,4 +1,6 @@
 import os
+import sys
+import zipfile
 import re
 import cv2
 import json
@@ -6,6 +8,13 @@ import numpy as np
 from tqdm import tqdm
 from collections import deque
 import time
+
+def extract_zip(zip_path, extract_to="tmp_tiles"):
+    if not os.path.exists(extract_to):
+        os.makedirs(extract_to)
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(extract_to)
+    return extract_to
 
 def parse_tile_filename(name):
     match = re.match(r"tile_(\d+)_(\d+)\.(jpg|jpeg|png)", name)
@@ -264,8 +273,13 @@ def stitch_soft_blend(tiles, save_weight_map_path=None, blend_mask_dir=None):
 
 def main():
     start_time = time.time()
-    folder = "img/5/tiles"
-    tiles = load_tiles(folder)
+
+    zip_path = sys.argv[1]
+    tile_folder = extract_zip(zip_path)
+    stitched_output_path = os.path.join(os.path.dirname(zip_path), "stitched.png")
+
+    tiles = load_tiles(tile_folder)
+
     print("Geladene Tiles:", len(tiles))
 
     print("Starte Ausrichtung...")
@@ -274,9 +288,9 @@ def main():
     print("Erzeuge Mosaik …")
     mosaic, min_x, min_y = stitch_tiles(tiles)
 
-    stitched_soft_blend = stitch_soft_blend(tiles, "weight_map.png", blend_mask_dir="img/5/stitched/weight_map/")
+    stitched_soft_blend = stitch_soft_blend(tiles)
 
-    cv2.imwrite("img/5/stitched/stitched_only_overlap.png", stitched_soft_blend)
+    cv2.imwrite(stitched_output_path, stitched_soft_blend)
 
     # cv2.imshow("Mosaic", mosaic)
     # cv2.waitKey(0)
