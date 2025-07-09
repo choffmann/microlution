@@ -281,7 +281,9 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
 
     File.mkdir_p!(base_path)
 
-    case HTTPoison.post(Api.build_zip(), Jason.encode!(image_ids), [{"Content-Type", "application/json"}]) do
+    case HTTPoison.post(Api.build_zip(), Jason.encode!(image_ids), [
+           {"Content-Type", "application/json"}
+         ]) do
       {:ok, %HTTPoison.Response{status_code: 201, body: body}} ->
         session_id = Jason.decode!(body)["output"]["id"]
         download_url = Api.download_zip(session_id)
@@ -291,7 +293,13 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
             File.write!(zip_path, zip_binary)
             IO.puts("ZIP gespeichert: #{zip_path}")
 
-            {output, code} = System.cmd("python3", ["/home/niklas/microlution/stitching/stitching_like_stitch2d.py", zip_path], stderr_to_stdout: true)
+            {output, code} =
+              System.cmd(
+                "python3",
+                ["/home/pi/niklas/microlution/stitching/stitching_like_stitch2d.py", zip_path],
+                stderr_to_stdout: true
+              )
+
             IO.puts("Stitching-Ausgabe:")
             IO.puts(output)
 
