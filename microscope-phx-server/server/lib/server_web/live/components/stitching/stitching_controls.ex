@@ -275,33 +275,67 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
       |> List.flatten()
       |> IO.inspect()
 
-    case HTTPoison.post(
-           Api.build_zip(),
-           image_ids |> Jason.encode!(),
-           [{"Content-Type", "application/json"}]
-         )
-         |> IO.inspect() do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        body |> IO.inspect()
+    run_id = DateTime.utc_now() |> DateTime.to_unix()
+    base_path = Path.join(System.user_home!(), "stitching/#{run_id}")
+    zip_path = Path.join(base_path, "tiles.zip")
 
+    File.mkdir_p!(base_path)
+
+    case HTTPoison.post(Api.build_zip(), Jason.encode!(image_ids), [{"Content-Type", "application/json"}]) do
       {:ok, %HTTPoison.Response{status_code: 201, body: body}} ->
-        id = Jason.decode!(body)["output"]["id"]
+        session_id = Jason.decode!(body)["output"]["id"]
+        download_url = Api.download_zip(session_id)
 
-      # case HTTPoison.get(Api.download_zip(id))
-      #      |> IO.inspect() do
-      #   {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-      #     #File.write("me.zip", body) |> IO.inspect()
+        case HTTPoison.get(download_url) do
+          {:ok, %HTTPoison.Response{status_code: 200, body: zip_binary}} ->
+            File.write!(zip_path, zip_binary)
+            IO.puts("ZIP gespeichert: #{zip_path}")
 
-      #   {:ok, %HTTPoison.Response{status_code: 201, body: body}} ->
-      #     #File.write("me", body) |> IO.inspect()
+            {output, code} = System.cmd("python3", ["/home/niklas/microlution/stitching/stitching_like_stitch2d.py", zip_path], stderr_to_stdout: true)
+            IO.puts("Stitching-Ausgabe:")
+            IO.puts(output)
 
-      #   _ ->
-      #     []
-      # end
+            if code == 0 do
+              IO.puts("Stitching erfolgreich!")
+            else
+              IO.puts("Fehler beim Stitching (Exit-Code #{code})")
+            end
 
-      _ ->
-        []
+          err ->
+            IO.inspect(err, label: "Fehler beim Herunterladen der ZIP-Datei")
+        end
+
+      err ->
+        IO.inspect(err, label: "Fehler beim Erzeugen der ZIP-Datei")
     end
+
+    # case HTTPoison.post(
+    #        Api.build_zip(),
+    #        image_ids |> Jason.encode!(),
+    #        [{"Content-Type", "application/json"}]
+    #      )
+    #      |> IO.inspect() do
+    #   {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+    #     body |> IO.inspect()
+    #
+    #   {:ok, %HTTPoison.Response{status_code: 201, body: body}} ->
+    #     id = Jason.decode!(body)["output"]["id"]
+    #
+    #   case HTTPoison.get(Api.download_zip(id))
+    #        |> IO.inspect() do
+    #     {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+    #       #File.write("me.zip", body) |> IO.inspect()
+    #
+    #     {:ok, %HTTPoison.Response{status_code: 201, body: body}} ->
+    #       #File.write("me", body) |> IO.inspect()
+    #
+    #     _ ->
+    #       []
+    #   end
+    #
+    #   _ ->
+    #     []
+    # end
 
     # Enum.each(0..5, fn x ->
     #   Autofocus.autofocus("fast")
