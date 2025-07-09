@@ -281,41 +281,69 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
 
     File.mkdir_p!(base_path)
 
-    case HTTPoison.post(Api.build_zip(), Jason.encode!(image_ids), [
-           {"Content-Type", "application/json"}
-         ]) do
-      {:ok, %HTTPoison.Response{status_code: 201, body: body}} ->
-        session_id = Jason.decode!(body)["output"]["id"]
-        download_url = Api.download_zip(session_id)
+    System.shell("mkdir stitch")
+    System.shell("cp /var/openflexure/data/micrographs/tile_0_0.jpeg /home/pi/stitch/")
+    System.shell("cp /var/openflexure/data/micrographs/tile_0_1.jpeg /home/pi/stitch/")
+    System.shell("cp /var/openflexure/data/micrographs/tile_1_0.jpeg /home/pi/stitch/")
+    System.shell("cp /var/openflexure/data/micrographs/tile_1_1.jpeg /home/pi/stitch/")
 
-        case HTTPoison.get(download_url) do
-          {:ok, %HTTPoison.Response{status_code: 200, body: zip_binary}} ->
-            File.write!(zip_path, zip_binary)
-            IO.puts("ZIP gespeichert: #{zip_path}")
+    {output, code} =
+      System.cmd(
+        "python3",
+        [
+          "/home/pi/niklas/microlution/stitching/stitching_like_stitch2d.py",
+          "/home/pi/stitch/tiles.zip"
+        ],
+        stderr_to_stdout: true
+      )
 
-            {output, code} =
-              System.cmd(
-                "python3",
-                ["/home/pi/niklas/microlution/stitching/stitching_like_stitch2d.py", zip_path],
-                stderr_to_stdout: true
-              )
+    IO.puts("Stitching-Ausgabe:")
+    IO.puts(output)
 
-            IO.puts("Stitching-Ausgabe:")
-            IO.puts(output)
-
-            if code == 0 do
-              IO.puts("Stitching erfolgreich!")
-            else
-              IO.puts("Fehler beim Stitching (Exit-Code #{code})")
-            end
-
-          err ->
-            IO.inspect(err, label: "Fehler beim Herunterladen der ZIP-Datei")
-        end
-
-      err ->
-        IO.inspect(err, label: "Fehler beim Erzeugen der ZIP-Datei")
+    if code == 0 do
+      IO.puts("Stitching erfolgreich!")
+    else
+      IO.puts("Fehler beim Stitching (Exit-Code #{code})")
     end
+
+    # case HTTPoison.post(Api.build_zip(), Jason.encode!(image_ids), [
+    #        {"Content-Type", "application/json"}
+    #      ]) do
+    #   {:ok, %HTTPoison.Response{status_code: 201, body: body}} ->
+    #     session_id = Jason.decode!(body)["output"]["id"]
+    #     download_url = Api.download_zip(session_id)
+
+    #     case HTTPoison.get(download_url) do
+    #       {:ok, %HTTPoison.Response{status_code: 200, body: zip_binary}} ->
+    #         File.write!(zip_path, zip_binary)
+    #         IO.puts("ZIP gespeichert: #{zip_path}")
+
+    #         {output, code} =
+    #           System.cmd(
+    #             "python3",
+    #             [
+    #               "/home/pi/niklas/microlution/stitching/stitching_like_stitch2d.py",
+    #               "/home/pi/stitch/tiles.zip"
+    #             ],
+    #             stderr_to_stdout: true
+    #           )
+
+    #         IO.puts("Stitching-Ausgabe:")
+    #         IO.puts(output)
+
+    #         if code == 0 do
+    #           IO.puts("Stitching erfolgreich!")
+    #         else
+    #           IO.puts("Fehler beim Stitching (Exit-Code #{code})")
+    #         end
+
+    #       err ->
+    #         IO.inspect(err, label: "Fehler beim Herunterladen der ZIP-Datei")
+    #     end
+
+    #   err ->
+    #     IO.inspect(err, label: "Fehler beim Erzeugen der ZIP-Datei")
+    # end
 
     # case HTTPoison.post(
     #        Api.build_zip(),

@@ -275,7 +275,7 @@ def main():
     start_time = time.time()
 
     zip_path = sys.argv[1]
-    tile_folder = extract_zip(zip_path)
+    tile_folder = zip_path
     stitched_output_path = os.path.join(os.path.dirname(zip_path), "stitched.png")
 
     tiles = load_tiles(tile_folder)
