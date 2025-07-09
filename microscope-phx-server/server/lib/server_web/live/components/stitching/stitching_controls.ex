@@ -292,7 +292,7 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
         "python3",
         [
           "/home/pi/niklas/microlution/stitching/stitching_like_stitch2d.py",
-          "/home/pi/stitch/tiles.zip"
+          "/home/pi/stitch/"
         ],
         stderr_to_stdout: true
       )
