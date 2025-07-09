@@ -61,7 +61,6 @@ def compute_offset_with_overlap(placed_img, target_img, index, direction, overla
     sift = cv2.SIFT_create()
     h, w = placed_img.shape[:2]
 
-    # Crop-Bereiche basierend auf Richtung
     if direction == "right":
         img1_crop = placed_img[:, w - overlap_px:]
         img2_crop = target_img[:, :overlap_px]
@@ -88,18 +87,15 @@ def compute_offset_with_overlap(placed_img, target_img, index, direction, overla
     if direction not in {"left", "right", "top", "bottom"}:
         return None, 0
 
-    # SIFT auf den Crops
     gray1 = cv2.cvtColor(img1_crop, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2_crop, cv2.COLOR_BGR2GRAY)
     kp1, des1 = sift.detectAndCompute(gray1, None)
     kp2, des2 = sift.detectAndCompute(gray2, None)
 
     if debug:
-        # Debug: Speichern der Crops
         cv2.imwrite(f"{debug_dir}/crops/crop1_{index}_{direction}.png", img1_crop)
         cv2.imwrite(f"{debug_dir}/crops/crop2_{index}_{direction}.png", img2_crop)
 
-        # Debug: Keypoints auf Crops
         kp_img1 = cv2.drawKeypoints(img1_crop, kp1, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
         kp_img2 = cv2.drawKeypoints(img2_crop, kp2, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
         cv2.imwrite(f"{debug_dir}/keypoints/kp_crop1_{index}_{direction}.png", kp_img1)
@@ -116,7 +112,6 @@ def compute_offset_with_overlap(placed_img, target_img, index, direction, overla
         return None, len(good)
 
     if debug:
-        # Debug: Keypoints zurückprojiziert auf Gesamtbild
         kp1_shifted = [cv2.KeyPoint(k.pt[0] + offset_img1[0], k.pt[1] + offset_img1[1], k.size) for k in kp1]
         kp2_shifted = [cv2.KeyPoint(k.pt[0] + offset_img2[0], k.pt[1] + offset_img2[1], k.size) for k in kp2]
 
@@ -183,10 +178,8 @@ def build_positions(tiles):
                 # offset, score = compute_offset(current_tile["img"], neighbor_tile["img"], index)
                 offset, score = compute_offset_with_overlap(
                     current_tile["img"], neighbor_tile["img"], index,
-                    direction=direction, overlap_px=800, debug=False
+                    direction=direction, overlap_px=800, debug=True
                 )
-
-                # print(f"[{index}] Versuche Nachbar {neighbor_coord} ({direction}) → Score: {score}, Offset: {offset}")
 
                 if offset is not None and score >= 5:
                     base_x, base_y = current_tile["pos"]
