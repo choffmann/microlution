@@ -122,26 +122,30 @@ defmodule Server.Navigation do
   def move_sanga(direction, step_size) do
     case direction do
       "up-left" ->
-        Sanga.Board.safe_move_stage_x(step_size)
-        Sanga.Board.safe_move_stage_y(step_size)
+        # Sanga.Board.safe_move_stage_x(step_size)
+        # Sanga.Board.safe_move_stage_y(step_size)
+        Sanga.Board.safe_move_all_axes(step_size, step_size, 0, 0)
 
       "up" ->
         Sanga.Board.safe_move_stage_y(step_size)
 
       "up-right" ->
-        Sanga.Board.safe_move_stage_x(-step_size)
-        Sanga.Board.safe_move_stage_y(step_size)
+        # Sanga.Board.safe_move_stage_x(-step_size)
+        # Sanga.Board.safe_move_stage_y(step_size)
+        Sanga.Board.safe_move_all_axes(-step_size, step_size, 0, 0)
 
       "down-left" ->
-        Sanga.Board.safe_move_stage_x(step_size)
-        Sanga.Board.safe_move_stage_y(-step_size)
+        # Sanga.Board.safe_move_stage_x(step_size)
+        # Sanga.Board.safe_move_stage_y(-step_size)
+        Sanga.Board.safe_move_all_axes(step_size, -step_size, 0, 0)
 
       "down" ->
         Sanga.Board.safe_move_stage_y(-step_size)
 
       "down-right" ->
-        Sanga.Board.safe_move_stage_x(-step_size)
-        Sanga.Board.safe_move_stage_y(-step_size)
+        # Sanga.Board.safe_move_stage_x(-step_size)
+        # Sanga.Board.safe_move_stage_y(-step_size)
+        Sanga.Board.safe_move_all_axes(-step_size, -step_size, 0, 0)
 
       "left" ->
         Sanga.Board.safe_move_stage_x(step_size)
