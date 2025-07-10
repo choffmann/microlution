@@ -219,14 +219,16 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
 
         datetime_string = DateTime.utc_now() |> DateTime.to_string()
 
+        filename =
+          "tile_#{if direction == "left" do
+            end_num - x
+          else
+            x
+          end}_#{y}"
+
         image_id =
           Capture.capture(%{
-            "filename" =>
-              "tile_#{if direction == "left" do
-                end_num - x
-              else
-                x
-              end}_#{y}",
+            "filename" => filename,
             "temporary" => "false",
             "full_resolution" => "false",
             "bayer" => "false",
@@ -236,12 +238,14 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
           })
 
         if x < end_num do
-          Navigation.move_in_direction(direction, step_size)
+          Navigation.move_stage(direction, step_size)
+          :timer.sleep(3000)
         else
-          Navigation.move_in_direction("down", step_size)
+          Navigation.move_stage("down", step_size)
+          :timer.sleep(3000)
         end
 
-        image_id
+        filename
       end
     end)
   end
@@ -270,7 +274,7 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
   end
 
   def handle_event("start-stitching", _params, socket) do
-    image_ids =
+    image_filenames =
       stitching_run_y(socket)
       |> List.flatten()
       |> IO.inspect()
@@ -281,11 +285,13 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
 
     File.mkdir_p!(base_path)
 
-    System.shell("mkdir stitch")
-    System.shell("cp /var/openflexure/data/micrographs/tile_0_0.jpeg /home/pi/stitch/")
-    System.shell("cp /var/openflexure/data/micrographs/tile_0_1.jpeg /home/pi/stitch/")
-    System.shell("cp /var/openflexure/data/micrographs/tile_1_0.jpeg /home/pi/stitch/")
-    System.shell("cp /var/openflexure/data/micrographs/tile_1_1.jpeg /home/pi/stitch/")
+    if not File.dir?("/home/pi/stitch") do
+      System.shell("mkdir stitch")
+    end
+
+    Enum.map(image_filenames, fn filename ->
+      System.shell("cp /var/openflexure/data/micrographs/#{filename}.jpeg /home/pi/stitch/")
+    end)
 
     {output, code} =
       System.cmd(
@@ -305,6 +311,10 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
     else
       IO.puts("Fehler beim Stitching (Exit-Code #{code})")
     end
+
+    Enum.map(image_filenames, fn filename ->
+      System.shell("rm -r /home/pi/stitch/#{filename}.jpeg")
+    end)
 
     # case HTTPoison.post(Api.build_zip(), Jason.encode!(image_ids), [
     #        {"Content-Type", "application/json"}
