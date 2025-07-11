@@ -164,16 +164,16 @@ defmodule Server.Navigation do
         %{x: -step_size, y: step_size}
 
       "up-left" ->
-        %{x: step_size, y: step_size}
+        %{x: 0, y: -step_size}
 
       "up-right" ->
-        %{x: -step_size, y: step_size}
+        %{x: -step_size, y: 0}
 
       "down-left" ->
-        %{x: step_size, y: -step_size}
+        %{x: step_size, y: 0}
 
       "down-right" ->
-        %{x: -step_size, y: -step_size}
+        %{x: 0, y: step_size}
     end
   end
 
