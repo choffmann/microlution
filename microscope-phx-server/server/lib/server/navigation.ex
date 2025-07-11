@@ -8,12 +8,6 @@ defmodule Server.Navigation do
 
     move_in_direction = get_navigate_direction_sanga(direction, step_size)
 
-    Phoenix.PubSub.broadcast(
-      Server.PubSub,
-      "update-minimap",
-      {:update_minimap, direction, step_size}
-    )
-
     Settings.update(1, %{
       "current_x" => settings.current_x + move_in_direction.x
     })
@@ -23,10 +17,35 @@ defmodule Server.Navigation do
     })
 
     move_sanga(direction, step_size)
+
+    update_minimap(direction, step_size)
+  end
+
+  def update_minimap(direction, step_size) do
+    settings = Settings.get_settings!(1)
+
+    move_in_direction =
+      get_navigate_direction_minimap(direction, step_size) |> IO.inspect()
+
+    boundaries = %{boundaryx: settings.boundary_x, boundaryy: settings.boundary_y}
+
+    Settings.update(1, %{
+      "minimap_x" => settings.minimap_x + move_in_direction.x,
+      "minimap_y" => settings.minimap_y + move_in_direction.y
+    })
+
+    Map.merge(move_in_direction, boundaries)
   end
 
   def move_stage(direction, step_size) do
     settings = Settings.get_settings!(1)
+
+    no_minimap_update = %{
+      boundaryx: settings.boundary_x,
+      boundaryy: settings.boundary_y,
+      x: 0,
+      y: 0
+    }
 
     move_in_direction =
       get_navigate_direction_sanga(direction, step_size)
@@ -35,19 +54,21 @@ defmodule Server.Navigation do
       if settings.current_y + move_in_direction.y > settings.boundary_y or
            settings.current_x + move_in_direction.x > settings.boundary_x do
         IO.inspect("Boundary Positive X")
+        no_minimap_update
       else
         if settings.boundary_y - settings.current_y >= move_in_direction.y or
              settings.boundary_x - settings.current_x >= move_in_direction.x do
-          move_in_direction(direction, step_size)
+          update_minimap = move_in_direction(direction, step_size)
         end
       end
     else
       if settings.current_y <= -settings.boundary_y or settings.current_x <= -settings.boundary_x do
         IO.inspect("Boundary Negative X")
+        no_minimap_update
       else
         if -settings.boundary_y <= settings.current_y + move_in_direction.y or
              -settings.boundary_x <= settings.current_x + move_in_direction.x do
-          move_in_direction(direction, step_size)
+          update_minimap = move_in_direction(direction, step_size)
         end
       end
     end

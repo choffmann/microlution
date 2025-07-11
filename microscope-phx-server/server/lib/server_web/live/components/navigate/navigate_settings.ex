@@ -1,5 +1,6 @@
 defmodule ServerWeb.Components.Navigate.NavigateSettings do
   use ServerWeb, :live_component
+  alias ServerWeb.Components.Navigate
   alias Server.Settings
 
   def render(assigns) do
@@ -89,12 +90,13 @@ defmodule ServerWeb.Components.Navigate.NavigateSettings do
   def handle_event("validate", params, socket) do
     Settings.update(1, params)
 
-    Phoenix.PubSub.broadcast(
-      Server.PubSub,
-      "update-minimap",
-      {:update_minimap, "right", 0}
-    )
+    update_minimap = Navigate.update_minimap("up", 0)
 
-    {:noreply, socket}
+    {:noreply,
+     push_event(
+       socket,
+       "update-minimap",
+       update_minimap
+     )}
   end
 end

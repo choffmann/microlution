@@ -78,10 +78,6 @@ defmodule ServerWeb.Components.CameraStreamMm do
   end
 
   def mount(socket) do
-    if connected?(socket) do
-      Phoenix.PubSub.subscribe(Server.PubSub, "update-minimap")
-    end
-
     settings = Settings.get_settings!(1)
 
     socket =
