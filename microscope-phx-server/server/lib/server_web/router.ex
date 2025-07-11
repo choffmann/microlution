@@ -24,6 +24,7 @@ defmodule ServerWeb.Router do
     live "/navigate", NavigateLive
     live "/capture", CaptureLive
     live "/stitching", StitchingLive
+    live "/stitching_inspect", StitchingInspectLive
     live "/automatic", AutomaticLive
     live "/storage", StorageLive
     live "/settings", SettingsLive

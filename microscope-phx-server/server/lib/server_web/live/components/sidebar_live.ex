@@ -59,6 +59,14 @@ defmodule ServerWeb.SidebarLive do
             href={NavConst.stitching()}
             icon="bi-x-diamond fs-2"
           />
+                    <.sidebar_item
+            class=""
+            menu_active={@menu_active}
+            menu_name="Stitching Inspect"
+            title="Stitching Inspect"
+            href={NavConst.stitching_inspect()}
+            icon="bi-x-diamond fs-2"
+          />
                     <.sidebar_a
             class=""
             menu_active={@menu_active}
@@ -83,6 +91,7 @@ defmodule ServerWeb.SidebarLive do
         ServerWeb.CaptureLive -> "Capture"
         ServerWeb.AutomaticLive -> "Automatic"
         ServerWeb.StitchingLive -> "Stitching"
+        ServerWeb.StitchingInspectLive -> "Stitching Inspect"
         ServerWeb.StorageLive -> "Storage"
         ServerWeb.SettingsLive -> "Settings"
         ServerWeb.LoggingLive -> "Logging"
