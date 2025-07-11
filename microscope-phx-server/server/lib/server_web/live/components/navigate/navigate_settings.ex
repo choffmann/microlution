@@ -1,7 +1,8 @@
 defmodule ServerWeb.Components.Navigate.NavigateSettings do
   use ServerWeb, :live_component
-  alias ServerWeb.Components.Navigate
+
   alias Server.Settings
+  alias Server.Navigation
 
   def render(assigns) do
     ~H"""
@@ -90,7 +91,7 @@ defmodule ServerWeb.Components.Navigate.NavigateSettings do
   def handle_event("validate", params, socket) do
     Settings.update(1, params)
 
-    update_minimap = Navigate.update_minimap("up", 0)
+    update_minimap = Navigation.update_minimap("up", 0)
 
     {:noreply,
      push_event(
