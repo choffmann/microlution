@@ -166,9 +166,32 @@ defmodule ServerWeb.Components.Navigate.NavigationArrowPad do
     step_size = socket.assigns.step_size
 
     Navigation.move_stage(direction, step_size)
+    minimap_navigation = move_minimap(direction, step_size)
 
     socket = socket |> assign(:settings, Settings.get_settings!(1))
-    {:noreply, socket}
+
+    {:noreply,
+     push_event(
+       socket,
+       "update-minimap",
+       minimap_navigation
+     )}
+  end
+
+  def move_minimap(direction, step_size) do
+    settings = Settings.get_settings!(1)
+
+    move_in_direction =
+      Navigation.get_navigate_direction_minimap(direction, step_size) |> IO.inspect()
+
+    boundaries = %{boundaryx: settings.boundary_x, boundaryy: settings.boundary_y}
+
+    Settings.update(1, %{
+      "minimap_x" => settings.minimap_x + move_in_direction.x,
+      "minimap_y" => settings.minimap_y + move_in_direction.y
+    })
+
+    Map.merge(move_in_direction, boundaries)
   end
 
   def handle_event("validate", _params, socket) do
