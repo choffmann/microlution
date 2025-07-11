@@ -5,12 +5,12 @@ defmodule ServerWeb.StitchingInspectLive do
     ~H"""
       <div class="row h-100 sidebar-2">
         <div class="col-3 ml-3">
-          <div class="row h-100 d-flex flex-row overflow-auto" style="border-right: 1px solid gray; overflow-y: auto; overflow-x: hidden;">
+          <div class="row h-100 d-flex flex-row overflow-auto gap-3 p-3" style="max-height: 100vh; border-right: 1px solid gray; overflow-y: auto; overflow-x: hidden;">
              <%= for img <- @stitched_images do %>
-              <div class="">
-                <img class="p-4" src={img} alt="Image" style="height: 25vh;" phx-click="set-image" phx-value-image={img}/>
+             <div class="card stretched-link d-flex flex-column justify-content-center align-items-center" phx-click="set-image" phx-value-image={img}  style={"background-color: #{if img |> String.replace_prefix("/images/", "") == @selected_image|> String.replace_prefix("/images/", "") do "lightgrey" else "white" end};"}>
+                <img class="p-4" src={img} alt="Image" />
                 <p><%= img |> String.replace_prefix("/images/", "") %></p>
-              </div>
+             </div>
               <% end %>
           </div>
         </div>
@@ -39,7 +39,7 @@ defmodule ServerWeb.StitchingInspectLive do
     socket =
       socket
       |> assign(:stitched_images, stitched_images)
-      |> assign(:selected_image, stitched_images |> List.first())
+      |> assign(:selected_image, List.first(stitched_images))
 
     {:ok, socket}
   end
