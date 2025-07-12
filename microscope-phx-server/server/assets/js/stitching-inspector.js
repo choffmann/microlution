@@ -10,7 +10,7 @@ let StitchingInspectorHook = {
             id: element.id,
             tileSources: {
                 type: 'image',
-                url: "/images/stitched.png"
+                url: image
             },
             showNavigator: true,
             maxZoomPixelRatio: 10

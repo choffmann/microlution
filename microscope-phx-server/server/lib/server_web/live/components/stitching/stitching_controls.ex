@@ -285,8 +285,12 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
 
     File.mkdir_p!(base_path)
 
-    if not File.dir?("/home/pi/stitch") do
-      System.shell("mkdir stitch")
+    if not File.dir?(
+         "/home/pi/niklas/microlution/microscope-phx-server/server/priv/static/images/stitched_images/"
+       ) do
+      System.shell(
+        "mkdir /home/pi/niklas/microlution/microscope-phx-server/server/priv/static/images/stitched_images/"
+      )
     end
 
     Enum.map(image_filenames, fn filename ->
@@ -298,7 +302,7 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
         "python3",
         [
           "/home/pi/niklas/microlution/stitching/stitching_like_stitch2d.py",
-          "/home/pi/stitch/"
+          "/home/pi/niklas/microlution/microscope-phx-server/server/priv/static/images/stitched_images/"
         ],
         stderr_to_stdout: true
       )
@@ -313,7 +317,9 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
     end
 
     Enum.map(image_filenames, fn filename ->
-      System.shell("rm -r /home/pi/stitch/#{filename}.jpeg")
+      System.shell(
+        "rm -r /home/pi/niklas/microlution/microscope-phx-server/server/priv/static/images/stitched_images/#{filename}.jpeg"
+      )
     end)
 
     # case HTTPoison.post(Api.build_zip(), Jason.encode!(image_ids), [

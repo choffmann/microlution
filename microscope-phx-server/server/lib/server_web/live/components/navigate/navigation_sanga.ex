@@ -26,6 +26,7 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
               class="btn btn-outline-primary"
               phx-click="sanga-stop"
               phx-target={@myself}
+              disable
             >
               <span class="bi-sign-stop fs-4"></span>
             </button>
@@ -133,11 +134,9 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
     {:noreply, socket}
   end
 
-  def handle_event("sanga-stop", _unsigned_params, socket) do
-    {os, _} = :os.type()
+  # def handle_event("sanga-stop", _unsigned_params, socket) do
+  #   {os, _} = :os.type()
 
-    Sanga.Board.abort_move()
-
-    {:noreply, socket}
-  end
+  #   {:noreply, socket}
+  # end
 end
