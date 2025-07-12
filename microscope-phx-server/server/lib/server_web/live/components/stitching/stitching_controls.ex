@@ -294,7 +294,9 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
     end
 
     Enum.map(image_filenames, fn filename ->
-      System.shell("cp /var/openflexure/data/micrographs/#{filename}.jpeg /home/pi/stitch/")
+      System.shell(
+        "cp /var/openflexure/data/micrographs/#{filename}.jpeg /home/pi/niklas/microlution/microscope-phx-server/server/priv/static/images/stitched_images/"
+      )
     end)
 
     {output, code} =
