@@ -9,7 +9,7 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
       <div class="row">
         <div class="d-flex flex-column">
           <div class="col">
-            <p class="h5">Sanga</p>
+            <p class="h5">Move Slider</p>
           </div>
 
           <div class="col d-flex justify-content-around">
@@ -26,7 +26,6 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
               class="btn btn-outline-primary"
               phx-click="sanga-stop"
               phx-target={@myself}
-              disabled
             >
               <span class="bi-sign-stop fs-4"></span>
             </button>
@@ -134,16 +133,11 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
     {:noreply, socket}
   end
 
-  # def handle_event("sanga-stop", _unsigned_params, socket) do
-  #   {os, _} = :os.type()
+  def handle_event("sanga-stop", _unsigned_params, socket) do
+    {os, _} = :os.type()
 
-  #   socket =
-  #     if os == :win32 do
-  #       socket |> assign(:sanga_message, "Sanga ist unter Windows nicht unterstützt.")
-  #     else
-  #       Sanga.Board.stop()
-  #     end
+    Sanga.Board.abort_move()
 
-  #   {:noreply, socket}
-  # end
+    {:noreply, socket}
+  end
 end

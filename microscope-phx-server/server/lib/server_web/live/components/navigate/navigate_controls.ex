@@ -45,17 +45,6 @@ defmodule ServerWeb.Components.Navigate.NavigateControls do
       <div class="col">
         <.live_component module={ServerWeb.Components.Navigate.NavigateHome} id="navigate-home" />
       </div>
-      <div class="col">
-        <button              class="btn btn-outline-primary"
-              phx-click="move"
-              phx-value-direction="up"
-              phx-value-step="200"
-              phx-target={@myself}>Move</button>
-        <button              class="btn btn-outline-primary"
-              phx-click="move-focus"
-              phx-value-step_size="200"
-              phx-target={@myself}>focus</button>
-      </div>
     </div>
     """
   end

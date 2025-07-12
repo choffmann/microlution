@@ -37,6 +37,13 @@ defmodule Sanga.Board do
   def multi_query(commands) when is_list(commands) and commands != [],
     do: do_multi_query(commands, &query/1)
 
+  def abort_move() do
+    {:ok, pid} = Circuits.UART.start_link()
+    :ok = Circuits.UART.open(pid, @port, speed: @baud)
+    Circuits.UART.write(pid, "abort_move\n")
+    :ok = Circuits.UART.close(pid)
+  end
+
   # === SAFE CONNECTION METHODS ===
 
   @doc "Send a single command with a temporary UART connection."

@@ -121,6 +121,7 @@ hooks.StitchingBoxesPreview = {
     let max_box_height = (canvas_height - offset_y) / y_steps - box_gap
     let current_x = offset_x;
     let current_y = offset_y;
+    let list_of_scanned_tiles = []
     console.log(canvas.width)
 
     drawBoxes(x_steps, y_steps)
@@ -135,6 +136,11 @@ hooks.StitchingBoxesPreview = {
 
       drawBoxes(x_steps, y_steps)
 
+    })
+
+    this.handleEvent("update-scanned-tiles", (payload) => {
+      console.log(payload.scanned_tile)
+      list_of_scanned_tiles.push(payload.scanned_tile)
     })
 
     this.handleEvent("update-stitching-boxes", (payload) => {
