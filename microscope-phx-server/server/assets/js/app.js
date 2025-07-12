@@ -21,6 +21,7 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
+import StitchingInspectorHook from "./stitching-inspector"
 
 let hooks = {}
 hooks.RunJS = {
@@ -31,6 +32,8 @@ hooks.RunJS = {
     });
   }
 };
+
+hooks.StitchingInspector = StitchingInspectorHook;
 
 hooks.MiniMap = {
   mounted() {
