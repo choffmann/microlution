@@ -3,6 +3,7 @@ defmodule ServerWeb.Components.CameraStreamMm do
   use ServerWeb, :live_component
   alias Server.Api
   alias Server.Settings
+  alias Server.Navigation
 
   def render(assigns) do
     ~H"""
@@ -20,27 +21,42 @@ defmodule ServerWeb.Components.CameraStreamMm do
 
         <div class="d-flex justify-content-around mt-2">
           <button class="" phx-click="handle-esp32-cam-stream" phx-target={@myself}>
-         <%= if @stream_mm do %>
-            <span class="bi-image fs-3"></span>
-         <% else %>
-            <span class="bi-camera-video fs-3"></span>
-         <% end %>
+          <%= if @stream_mm do %>
+              <span class="bi-image fs-3"></span>
+          <% else %>
+              <span class="bi-camera-video fs-3"></span>
+          <% end %>
           </button>
+
           <button class="" phx-click="esp32-cam-take-capture" phx-target={@myself}>
             <span class="bi-camera fs-3"></span>
           </button>
+
+          <button class="" phx-click="move-slider" phx-target={@myself}>
+            <span class="bi-arrow-left fs-3"></span>
+          </button>
+
           <button class="">
             <span class="bi-r-square fs-3" phx-click="reset-minimap" phx-target={@myself}></span>
           </button>
-                  <div class="d-flex align-items-center">
-          <button phx-click="handle-show-mm" phx-target={@myself}>
-            <span class="bi-chevron-bar-down fs-5 mr-2"></span>
+
+          <button class="" phx-click="handle-show-mm-features" phx-target={@myself}>
+          <%= if @show_mm_features do %>
+              <span class="bi-eye-slash fs-3"></span>
+          <% else %>
+              <span class="bi-eye fs-3"></span>
+          <% end %>
           </button>
-        </div>
+
+          <div class="d-flex align-items-center">
+            <button phx-click="handle-show-mm" phx-target={@myself}>
+              <span class="bi-chevron-bar-down fs-5 mr-2"></span>
+            </button>
+          </div>
         </div>
         <div class="overlay mt-0">
        <%= if @stream_mm do %>
-          <img class="d-block minimap-stream-img" src={Api.esp32_cam_stream()} alt="MJPEG stream" />
+          <%!-- <img class="d-block minimap-stream-img" src={Api.esp32_cam_stream()} alt="MJPEG stream" /> --%>
 
        <% else %>
           <img class="d-block minimap-stream-img" src={"/images/minimap.jpg"} alt="MJPEG stream" />
@@ -56,6 +72,7 @@ defmodule ServerWeb.Components.CameraStreamMm do
           data-boundaryy={@settings.boundary_y}
           data-minimapx={@settings.minimap_x}
           data-minimapy={@settings.minimap_y}
+          data-showminimapfeatures={Jason.encode!(@settings.show_mm_features)}
           style="top: 34px; left: 0px;"
           >
           </canvas>
@@ -84,6 +101,7 @@ defmodule ServerWeb.Components.CameraStreamMm do
       socket
       |> assign(:image_url, "/images/minimap.jpg")
       |> assign(:show_mm, settings.show_mm)
+      |> assign(:show_mm_features, settings.show_mm_features)
       |> assign(:stream_mm, settings.stream_mm)
       |> assign(:settings, settings)
 
@@ -97,6 +115,34 @@ defmodule ServerWeb.Components.CameraStreamMm do
     socket =
       socket
       |> assign(:show_mm, !socket.assigns.show_mm)
+
+    {:noreply,
+     push_event(
+       socket,
+       "update-minimap",
+       Navigation.refresh_minimap()
+     )}
+  end
+
+  def handle_event("handle-show-mm-features", _params, socket) do
+    IO.inspect(socket.assigns.show_mm_features)
+    Settings.update(1, %{"show_mm_features" => !socket.assigns.show_mm_features})
+
+    socket =
+      socket
+      |> assign(:show_mm_features, !socket.assigns.show_mm_features)
+
+    {:noreply,
+     push_event(
+       socket,
+       "update-minimap",
+       Navigation.refresh_minimap()
+     )}
+  end
+
+  def handle_event("move-slider", _params, socket) do
+    Settings.update(1, %{"stream_mm" => !socket.assigns.stream_mm})
+    Sanga.Board.safe_move_slider(42000)
 
     {:noreply, socket}
   end

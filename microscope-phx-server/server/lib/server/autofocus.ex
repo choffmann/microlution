@@ -74,10 +74,20 @@ defmodule Server.Autofocus do
   def adjust_focus(focus_step_size) do
     settings = Settings.get_settings!(1)
 
-    Settings.update(1, %{
-      "current_z" => settings.current_z + focus_step_size
-    })
+    cond do
+      focus_step_size > 0 and settings.current_z + focus_step_size < settings.boundary_z ->
+        Settings.update(1, %{
+          "current_z" => settings.current_z + focus_step_size
+        })
 
-    Sanga.Board.safe_move_stage_z(focus_step_size)
+        Sanga.Board.safe_move_stage_z(focus_step_size)
+
+      focus_step_size < 0 and settings.current_z + focus_step_size > -settings.boundary_z ->
+        Settings.update(1, %{
+          "current_z" => settings.current_z + focus_step_size
+        })
+
+        Sanga.Board.safe_move_stage_z(focus_step_size)
+    end
   end
 end

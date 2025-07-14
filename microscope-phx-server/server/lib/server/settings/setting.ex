@@ -23,6 +23,8 @@ defmodule Server.Settings.Setting do
     field(:boundary_x, :integer, default: 0)
     field(:boundary_y, :integer, default: 0)
     field(:boundary_z, :integer, default: 0)
+    field(:boundary_sanga_start, :integer, default: 0)
+    field(:boundary_sanga_end, :integer, default: 0)
 
     field(:navigate_step_size, :integer, default: 0)
     field(:focus_step_size, :integer, default: 0)
@@ -43,7 +45,10 @@ defmodule Server.Settings.Setting do
     field(:stitching_step_size_boundary, :integer, default: 0)
 
     field(:show_mm, :boolean, default: false)
+    field(:show_mm_features, :boolean, default: true)
     field(:stream_mm, :boolean, default: false)
+
+    field(:navigation_minimap, :boolean, default: false)
 
     field(:esp_32_cam_ip, :string, default: "192.168.188.58")
 
@@ -70,6 +75,8 @@ defmodule Server.Settings.Setting do
       :boundary_x,
       :boundary_y,
       :boundary_z,
+      :boundary_sanga_start,
+      :boundary_sanga_end,
       :navigate_step_size,
       :focus_step_size,
       :sanga_step_size,
@@ -85,7 +92,9 @@ defmodule Server.Settings.Setting do
       :stitching_sleep_time_boundary,
       :stitching_step_size_boundary,
       :show_mm,
+      :show_mm_features,
       :stream_mm,
+      :navigation_minimap,
       :esp_32_cam_ip
     ])
     |> validate_required([
@@ -105,6 +114,8 @@ defmodule Server.Settings.Setting do
       :boundary_x,
       :boundary_y,
       :boundary_z,
+      :boundary_sanga_start,
+      :boundary_sanga_end,
       :navigate_step_size,
       :focus_step_size,
       :sanga_step_size,
@@ -120,7 +131,9 @@ defmodule Server.Settings.Setting do
       :stitching_sleep_time_boundary,
       :stitching_step_size_boundary,
       :show_mm,
+      :show_mm_features,
       :stream_mm,
+      :navigation_minimap,
       :esp_32_cam_ip
     ])
   end

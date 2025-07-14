@@ -35,6 +35,12 @@ defmodule Server.Navigation do
     })
 
     Map.merge(move_in_direction, boundaries)
+    |> Map.merge(%{show_mm_features: settings.show_mm_features})
+    |> IO.inspect()
+  end
+
+  def refresh_minimap() do
+    update_minimap("up", 0)
   end
 
   def move_stage(direction, step_size) do
@@ -48,7 +54,13 @@ defmodule Server.Navigation do
     }
 
     move_in_direction =
-      get_navigate_direction_sanga(direction, step_size)
+      cond do
+        settings.navigation_minimap ->
+          get_navigate_direction(direction, step_size)
+
+        !settings.navigation_minimap ->
+          get_navigate_direction_sanga(direction, step_size)
+      end
 
     if move_in_direction.y > 0 or move_in_direction.x > 0 do
       if settings.current_y + move_in_direction.y > settings.boundary_y or

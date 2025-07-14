@@ -7,7 +7,7 @@ defmodule ServerWeb.StitchingInspectLive do
       <div class="col-3 ml-3">
         <div class="row h-100 d-flex flex-row overflow-auto gap-3 p-3" style="max-height: 100vh; border-right: 1px solid gray; overflow-y: auto; overflow-x: hidden;">
            <%= for img <- @stitched_images do %>
-           <div class="card stretched-link d-flex flex-column justify-content-center align-items-center" phx-click="set-image" phx-value-image={img}  style={"background-color: #{if img |> String.replace_prefix("/images/stitched_images/", "") == @selected_image|> String.replace_prefix("/images/", "") do "lightgrey" else "white" end};"}>
+           <div class="card stretched-link d-flex flex-column justify-content-center align-items-center" phx-click="set-image" phx-value-image={img}  style={"background-color: #{if img |> String.replace_prefix("/images/stitched_images/", "") == @selected_image|> String.replace_prefix("/images/stitched_images/", "") do "lightgrey" else "white" end};"}>
               <img class="p-4" src={img} alt="Image" />
               <p><%= img |> String.replace_prefix("/images/stitched_images/", "") %></p>
            </div>

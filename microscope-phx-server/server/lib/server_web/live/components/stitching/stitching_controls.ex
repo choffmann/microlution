@@ -96,6 +96,7 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
         </div>
 
         <div class="col w-100">
+          <p class="h5">Generated Tiles Preview</p>
           <canvas class="w-100" id="stitching-boxes-preview" phx-hook="StitchingBoxesPreview" height="200"></canvas>
         </div>
       </.simple_form>

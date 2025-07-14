@@ -105,25 +105,29 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
       if os == :win32 do
         socket |> assign(:sanga_message, "Sanga ist unter Windows nicht unterstützt.")
       else
-        Sanga.Board.start_link()
+        # Sanga.Board.start_link()
 
-        if dir == "forwards" do
-          Sanga.Board.safe_move_slider(sanga_step_size)
+        cond do
+          dir == "forwards" and
+              settings.boundary_sanga_end + sanga_step_size < settings.boundary_sanga_end ->
+            Sanga.Board.safe_move_slider(sanga_step_size)
 
-          Settings.update(1, %{
-            "current_sanga_x" => settings.current_sanga_x + sanga_step_size
-          })
+            Settings.update(1, %{
+              "current_sanga_x" => settings.current_sanga_x + sanga_step_size
+            })
 
-          socket
-        else
-          Sanga.Board.safe_move_slider(-sanga_step_size)
+            socket
 
-          Settings.update(1, %{
-            "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
-          })
+          dir != "forwards" and
+              settings.boundary_sanga_start + sanga_step_size < settings.boundary_sanga_start ->
+            Sanga.Board.safe_move_slider(-sanga_step_size)
+
+            Settings.update(1, %{
+              "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
+            })
         end
 
-        Sanga.Board.stop()
+        # Sanga.Board.stop()
         socket
       end
 
