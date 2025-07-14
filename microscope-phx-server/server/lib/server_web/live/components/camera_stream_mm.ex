@@ -56,7 +56,7 @@ defmodule ServerWeb.Components.CameraStreamMm do
         </div>
         <div class="overlay mt-0">
        <%= if @stream_mm do %>
-          <%!-- <img class="d-block minimap-stream-img" src={Api.esp32_cam_stream()} alt="MJPEG stream" /> --%>
+          <img class="d-block minimap-stream-img" src={Api.esp32_cam_stream()} alt="MJPEG stream" />
 
        <% else %>
           <img class="d-block minimap-stream-img" src={"/images/minimap.jpg"} alt="MJPEG stream" />
