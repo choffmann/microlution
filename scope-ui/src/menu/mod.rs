@@ -17,6 +17,7 @@ use position::Position;
 
 use crate::{
     client::{AppClient, AppConfig, OpenflexureAxis},
+    display::Flushable,
     input::{InputEvent, MenuInput},
 };
 
@@ -105,22 +106,25 @@ impl Default for MenuData {
     }
 }
 
-pub struct ScopeMenu {
+pub struct ScopeMenu<D> {
     client: AppClient,
+    display: D,
 }
 
-impl ScopeMenu {
-    pub fn new(config: &AppConfig) -> Self {
+impl<D> ScopeMenu<D>
+where
+    D: DrawTarget<Color = Rgb565, Error: Debug> + Flushable,
+{
+    pub fn new(config: &AppConfig, display: D) -> Self {
         let client = AppClient::new(config);
-        Self { client }
+        Self { client, display }
     }
 
-    pub async fn run<D, I>(&mut self, display: &mut D, input: &mut I) -> anyhow::Result<()>
+    pub async fn run<I>(&mut self, input: &mut I) -> anyhow::Result<()>
     where
-        D: DrawTarget<Color = Rgb565, Error: Debug>,
         I: MenuInput,
     {
-        let _ = &self.try_clear_display(display);
+        let _ = self.display.clear(Rgb565::BLACK);
 
         // Show logo / text
 
@@ -139,24 +143,16 @@ impl ScopeMenu {
 
         loop {
             match data.current_view {
-                MenuView::MainMenu => self.main_menu(display, input, &mut state, &mut data).await,
-                MenuView::Control => {
-                    self.control_menu(display, input, &mut state, &mut data)
-                        .await
-                }
+                MenuView::MainMenu => self.main_menu(input, &mut state, &mut data).await,
+                MenuView::Control => self.control_menu(input, &mut state, &mut data).await,
                 MenuView::Scan | MenuView::Settings | MenuView::Info => {
                     println!("{:?} view is not implemented yet.", data.current_view);
                     data.current_view = MenuView::MainMenu;
                 }
             }
 
-            std::thread::sleep(Duration::from_micros(1000));
-        }
-    }
-
-    fn try_clear_display<D: DrawTarget<Color = Rgb565>>(&self, display: &mut D) {
-        if let Err(_e) = display.clear(Rgb565::BLACK) {
-            error!("Failed to clear display");
+            std::thread::sleep(Duration::from_millis(100));
+            self.display.flush().unwrap();
         }
     }
 
@@ -195,7 +191,7 @@ impl ScopeMenu {
         };
     }
 
-    pub async fn handle_event(&self, event: MenuEvent, data: &mut MenuData) {
+    pub async fn handle_event(&mut self, event: MenuEvent, data: &mut MenuData) {
         match event {
             MenuEvent::Navigate(view) => {
                 debug!("switching to view {:?}", view);
@@ -236,14 +232,12 @@ impl ScopeMenu {
         }
     }
 
-    pub async fn main_menu<D, I>(
-        &self,
-        display: &mut D,
+    pub async fn main_menu<I>(
+        &mut self,
         input: &mut I,
         state: &mut MenuState<ProgrammedAdapter<MenuEvent>, StaticPosition, Line>,
         data: &mut MenuData,
     ) where
-        D: DrawTarget<Color = Rgb565, Error: Debug>,
         I: MenuInput,
     {
         let main_menu_items = vec![
@@ -267,6 +261,12 @@ impl ScopeMenu {
         .build_with_state(*state);
 
         let event = input.poll();
+        if let Some(_) = event {
+            let _ = self.display.clear(Rgb565::BLACK);
+            menu.draw(&mut self.display).unwrap();
+            menu.update(&self.display);
+        }
+
         let event = match event {
             Some(InputEvent::Up) => menu.interact(Interaction::Navigation(Navigation::Previous)),
             Some(InputEvent::Down) => menu.interact(Interaction::Navigation(Navigation::Next)),
@@ -276,24 +276,18 @@ impl ScopeMenu {
         };
 
         if let Some(event) = event {
-            self.try_clear_display(display);
             self.handle_event(event, data).await;
-
-            menu.update(display);
-            menu.draw(display).unwrap();
         }
 
         *state = menu.state();
     }
 
-    async fn control_menu<D, I>(
-        &self,
-        display: &mut D,
+    async fn control_menu<I>(
+        &mut self,
         input: &mut I,
         state: &mut MenuState<ProgrammedAdapter<MenuEvent>, StaticPosition, Line>,
         data: &mut MenuData,
     ) where
-        D: DrawTarget<Color = Rgb565, Error: Debug>,
         I: MenuInput,
     {
         let mut menu = Menu::with_style(
@@ -329,6 +323,12 @@ impl ScopeMenu {
         .build_with_state(*state);
 
         let event = input.poll();
+        if let Some(_) = event {
+            let _ = self.display.clear(Rgb565::BLACK);
+            menu.draw(&mut self.display).unwrap();
+            menu.update(&self.display);
+        }
+
         let event = match event {
             Some(InputEvent::Up) => {
                 if let Some(lock) = &data.lock_input {
@@ -370,11 +370,7 @@ impl ScopeMenu {
         };
 
         if let Some(event) = event {
-            let _ = &self.try_clear_display(display);
-            let _ = &self.handle_event(event, data).await;
-
-            menu.update(display);
-            menu.draw(display).unwrap();
+            self.handle_event(event, data).await;
         }
 
         *state = menu.state();

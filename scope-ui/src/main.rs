@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
     let dc_pin = gpio.get(DC_PIN).unwrap().into_output();
     let rst_pin = gpio.get(RST_PIN).unwrap().into_output();
     let interface = SPIInterface::new(spi, dc_pin);
-    let mut display = Ili9341::new(interface, rst_pin, &mut Delay, DisplaySize320x240).unwrap();
+    let display = Ili9341::new(interface, rst_pin, &mut Delay, DisplaySize320x240).unwrap();
 
     let rotary_clk = gpio.get(ROTARY_CLK).expect("Invalid CLK pin").into_input();
     let rotary_dt = gpio.get(ROTARY_DT).expect("Invalid DT pin").into_input();
@@ -42,8 +42,8 @@ async fn main() -> anyhow::Result<()> {
         phoenix_url: "http://localhost:4000".try_into().unwrap(),
     };
 
-    let mut menu = ScopeMenu::new(&config);
-    menu.run(&mut display, &mut input).await
+    let mut menu = ScopeMenu::new(&config, display);
+    menu.run(&mut input).await
 }
 
 // pub struct InputWindow {

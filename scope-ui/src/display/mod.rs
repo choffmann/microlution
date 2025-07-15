@@ -1,6 +1,10 @@
 pub mod graphics_core;
 pub mod ili9341;
 
+pub trait Flushable {
+    fn flush(&mut self) -> Result<(), DisplayError>;
+}
+
 /// Trait for display interfaces that support both command and data transmission,
 /// including optional read-back functionality for supported controllers.
 ///

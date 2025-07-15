@@ -1,6 +1,8 @@
 use embedded_hal::delay::DelayNs;
 use embedded_hal::digital::OutputPin;
 
+use crate::display::Flushable;
+
 use super::DataFormat;
 use super::DisplayError;
 use super::DisplaySize;
@@ -34,6 +36,7 @@ pub enum ModeState {
 /// - `RESET`: Digital output pin used to reset the display.
 pub struct Ili9341<IFACE, RESET> {
     interface: IFACE,
+    framebuffer: [[u16; 320]; 240], // WITDH x HEIGHT
     reset: RESET,
     width: usize,
     height: usize,
@@ -66,6 +69,7 @@ where
         let mut ili9341 = Ili9341 {
             interface,
             reset,
+            framebuffer: [[0u16; 320]; 240],
             width: SIZE::WIDTH,
             height: SIZE::HEIGHT,
         };
@@ -167,6 +171,17 @@ where
         self.write_iter(data)
     }
 
+    pub fn write_pixel(&mut self, x: u16, y: u16, data: u16) -> Result {
+        // dbg!(x, y, data);
+        let (x, y) = (x as usize, y as usize);
+        if x <= self.width && y <= self.height() {
+            self.framebuffer[y][x] = data;
+            Ok(())
+        } else {
+            Err(DisplayError::OutOfBoundsError)
+        }
+    }
+
     /// Draws an area of pixels from a slice of 16-bit RGB565 values.
     ///
     /// The length of the slice must match the number of pixels in the target rectangle.
@@ -215,9 +230,8 @@ where
     }
 
     /// Fills the entire display with a single RGB565 color.
-    pub fn clear_screen(&mut self, color: u16) -> Result {
-        let color = core::iter::repeat_n(color, self.width * self.height);
-        self.draw_pixels_iter(0, 0, self.width as u16, self.height as u16, color)
+    pub fn clear_screen(&mut self, color: u16) {
+        self.framebuffer = [[color; 320]; 240];
     }
 }
 
@@ -230,6 +244,23 @@ impl<IFACE, RESET> Ili9341<IFACE, RESET> {
     /// Returns the current height of the display in pixels.
     pub fn height(&self) -> usize {
         self.height
+    }
+}
+
+impl<IFACE, RESET> Flushable for Ili9341<IFACE, RESET>
+where
+    IFACE: ReadWriteDataCommand,
+    RESET: OutputPin,
+{
+    fn flush(&mut self) -> std::result::Result<(), DisplayError> {
+        // dbg!("flush", self.framebuffer);
+        self.draw_pixels_iter(
+            0,
+            0,
+            self.width as u16,
+            self.height as u16,
+            self.framebuffer.into_iter().flatten(),
+        )
     }
 }
 
@@ -401,7 +432,7 @@ mod tests {
 
         let mut display = Ili9341::new(iface.clone(), reset, &mut delay, DummySize).unwrap();
 
-        display.clear_screen(0x1234).unwrap();
+        display.clear_screen(0x1234);
 
         let binding = iface.borrow();
         let data = binding.data.borrow();

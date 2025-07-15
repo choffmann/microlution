@@ -30,58 +30,59 @@ where
                 let x = point.x as u16;
                 let y = point.y as u16;
                 let color = RawU16::from(color).into_inner();
-                self.draw_pixels_slice(x, y, x, y, &[color])?;
+                self.write_pixel(x, y, color)?;
             }
         }
         Ok(())
     }
 
-    fn fill_contiguous<I>(
-        &mut self,
-        area: &embedded_graphics::primitives::Rectangle,
-        colors: I,
-    ) -> Result<(), Self::Error>
-    where
-        I: IntoIterator<Item = Self::Color>,
-    {
-        let drawable_area = area.intersection(&self.bounding_box());
-
-        if let Some(drawable_bottom_right) = drawable_area.bottom_right() {
-            let x0 = drawable_area.top_left.x as u16;
-            let y0 = drawable_area.top_left.y as u16;
-            let x1 = drawable_bottom_right.x as u16;
-            let y1 = drawable_bottom_right.y as u16;
-
-            if area == &drawable_area {
-                // All pixels are on screen
-                self.draw_pixels_iter(
-                    x0,
-                    y0,
-                    x1,
-                    y1,
-                    area.points()
-                        .zip(colors)
-                        .map(|(_, color)| RawU16::from(color).into_inner()),
-                )
-            } else {
-                // Some Pixel are on screen
-                self.draw_pixels_iter(
-                    x0,
-                    y0,
-                    x1,
-                    y1,
-                    area.points()
-                        .zip(colors)
-                        .filter(|(point, _)| drawable_area.contains(*point))
-                        .map(|(_, color)| RawU16::from(color).into_inner()),
-                )
-            }
-        } else {
-            Ok(())
-        }
-    }
+    // fn fill_contiguous<I>(
+    //     &mut self,
+    //     area: &embedded_graphics::primitives::Rectangle,
+    //     colors: I,
+    // ) -> Result<(), Self::Error>
+    // where
+    //     I: IntoIterator<Item = Self::Color>,
+    // {
+    //     let drawable_area = area.intersection(&self.bounding_box());
+    //
+    //     if let Some(drawable_bottom_right) = drawable_area.bottom_right() {
+    //         let x0 = drawable_area.top_left.x as u16;
+    //         let y0 = drawable_area.top_left.y as u16;
+    //         let x1 = drawable_bottom_right.x as u16;
+    //         let y1 = drawable_bottom_right.y as u16;
+    //
+    //         if area == &drawable_area {
+    //             // All pixels are on screen
+    //             self.draw_pixels_iter(
+    //                 x0,
+    //                 y0,
+    //                 x1,
+    //                 y1,
+    //                 area.points()
+    //                     .zip(colors)
+    //                     .map(|(_, color)| RawU16::from(color).into_inner()),
+    //             )
+    //         } else {
+    //             // Some Pixel are on screen
+    //             self.draw_pixels_iter(
+    //                 x0,
+    //                 y0,
+    //                 x1,
+    //                 y1,
+    //                 area.points()
+    //                     .zip(colors)
+    //                     .filter(|(point, _)| drawable_area.contains(*point))
+    //                     .map(|(_, color)| RawU16::from(color).into_inner()),
+    //             )
+    //         }
+    //     } else {
+    //         Ok(())
+    //     }
+    // }
 
     fn clear(&mut self, color: Self::Color) -> Result<(), Self::Error> {
-        self.clear_screen(RawU16::from(color).into_inner())
+        self.clear_screen(RawU16::from(color).into_inner());
+        Ok(())
     }
 }
