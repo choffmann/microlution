@@ -2,6 +2,7 @@ use byte_slice_cast::AsByteSlice;
 use display::{DataFormat, DisplayError, ReadWriteDataCommand};
 use embedded_hal::{digital::OutputPin, spi::SpiDevice};
 
+pub mod client;
 pub mod display;
 pub mod input;
 pub mod menu;

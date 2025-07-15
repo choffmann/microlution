@@ -4,6 +4,7 @@ use linux_embedded_hal::{
 };
 use rppal::{gpio::Gpio, hal::Delay};
 use scope_ui::{
+    client::AppConfig,
     display::ili9341::{DisplaySize320x240, Ili9341},
     input::rotary_encoder::RotaryEncoder,
     menu::ScopeMenu,
@@ -17,7 +18,8 @@ const ROTARY_CLK: u8 = 18;
 const ROTARY_DT: u8 = 17;
 const ROTARY_SW: u8 = 27;
 
-fn main() {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     env_logger::init();
 
     let gpio = Gpio::new().expect("Failed to setup gpio");
@@ -35,8 +37,13 @@ fn main() {
     let rotary_sw = gpio.get(ROTARY_SW).expect("Invalid SW pin").into_input();
 
     let mut input = RotaryEncoder::new(rotary_clk, rotary_dt, rotary_sw);
-    let mut menu = ScopeMenu;
-    menu.run(&mut display, &mut input);
+    let config = AppConfig {
+        openflexure_url: "http://localhost:5000".try_into().unwrap(),
+        phoenix_url: "http://localhost:4000".try_into().unwrap(),
+    };
+
+    let mut menu = ScopeMenu::new(&config);
+    menu.run(&mut display, &mut input).await
 }
 
 // pub struct InputWindow {

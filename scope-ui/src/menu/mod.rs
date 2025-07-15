@@ -15,7 +15,10 @@ use embedded_menu::{
 use log::{debug, error};
 use position::Position;
 
-use crate::input::{InputEvent, MenuInput};
+use crate::{
+    client::{AppClient, AppConfig},
+    input::{InputEvent, MenuInput},
+};
 
 mod position;
 
@@ -102,19 +105,37 @@ impl Default for MenuData {
     }
 }
 
-pub struct ScopeMenu;
+pub struct ScopeMenu {
+    client: AppClient,
+}
 
 impl ScopeMenu {
-    pub fn run<D, I>(&mut self, display: &mut D, input: &mut I)
+    pub fn new(config: &AppConfig) -> Self {
+        let client = AppClient::new(config);
+        Self { client }
+    }
+
+    pub async fn run<D, I>(&mut self, display: &mut D, input: &mut I) -> anyhow::Result<()>
     where
         D: DrawTarget<Color = Rgb565, Error: Debug>,
         I: MenuInput,
     {
+        try_clear_display(display);
+
+        // Show logo / text
+
+        let flexure_stage = self.client.get_openflexure_position().await?;
+
         let mut state: MenuState<ProgrammedAdapter<MenuEvent>, StaticPosition, Line> =
             Default::default();
-        let mut data = MenuData::default();
-
-        try_clear_display(display);
+        let mut data = MenuData {
+            current_view: MenuView::MainMenu,
+            lock_input: None,
+            sample_changer_pos: Position::new(10),
+            microscope_x_pos: Position::new(flexure_stage.x),
+            microscope_y_pos: Position::new(flexure_stage.y),
+            microscope_z_pos: Position::new(flexure_stage.z),
+        };
 
         loop {
             match data.current_view {

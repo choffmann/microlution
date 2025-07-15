@@ -4,21 +4,21 @@ use embedded_menu::items::menu_item::SelectValue;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Position {
-    value: u32,
+    value: i64,
     string_repr: String,
 }
 
 impl Position {
-    pub fn new(value: u32) -> Self {
+    pub fn new(value: i64) -> Self {
         let string_repr = value.to_string();
         Self { value, string_repr }
     }
 
-    pub fn value(&self) -> u32 {
+    pub fn value(&self) -> i64 {
         self.value
     }
 
-    pub fn set_value(&mut self, value: u32) {
+    pub fn set_value(&mut self, value: i64) {
         self.value = value;
         self.string_repr = value.to_string();
     }
@@ -28,24 +28,24 @@ impl Position {
     }
 }
 
-impl From<u32> for Position {
-    fn from(value: u32) -> Self {
+impl From<i64> for Position {
+    fn from(value: i64) -> Self {
         Self::new(value)
     }
 }
 
-impl Add<u32> for Position {
+impl Add<i64> for Position {
     type Output = Self;
 
-    fn add(self, rhs: u32) -> Self::Output {
+    fn add(self, rhs: i64) -> Self::Output {
         Self::new(self.value + rhs)
     }
 }
 
-impl Sub<u32> for Position {
+impl Sub<i64> for Position {
     type Output = Self;
 
-    fn sub(self, rhs: u32) -> Self::Output {
+    fn sub(self, rhs: i64) -> Self::Output {
         Self::new(self.value - rhs)
     }
 }

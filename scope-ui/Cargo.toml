@@ -16,5 +16,9 @@ embedded-layout = "0.4.2"
 log = "0.4.27"
 env_logger = "0.11.8"
 rotary-encoder-embedded = "0.4.0"
-reqwest = "0.12.20"
+reqwest = { version = "0.12.20", features = ["json"] }
+tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread", "time"] }
+anyhow = "1.0.98"
+url = "2.5.4"
+serde_json = "1.0.140"
 
