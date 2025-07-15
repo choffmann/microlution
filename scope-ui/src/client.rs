@@ -37,10 +37,11 @@ pub enum OpenflexureAxis {
 
 #[derive(Debug)]
 pub enum MoveDirection {
-    Pos(OpenflexureAxis, usize),
-    Neg(OpenflexureAxis, usize),
+    Pos(OpenflexureAxis),
+    Neg(OpenflexureAxis),
 }
 
+#[derive(Clone)]
 pub struct AppClient {
     openflexure_url: url::Url,
     phoenix_url: url::Url,
@@ -72,13 +73,13 @@ impl AppClient {
         json.try_into()
     }
 
-    pub async fn openflexure_step(
+    pub async fn move_openflexure(
         &self,
         direction: MoveDirection,
     ) -> anyhow::Result<reqwest::Response> {
         match direction {
-            MoveDirection::Pos(axis, _) => self.move_axis(axis, 200),
-            MoveDirection::Neg(axis, _) => self.move_axis(axis, -200),
+            MoveDirection::Pos(axis) => self.move_axis(axis, 200),
+            MoveDirection::Neg(axis) => self.move_axis(axis, -200),
         }
         .await
     }
