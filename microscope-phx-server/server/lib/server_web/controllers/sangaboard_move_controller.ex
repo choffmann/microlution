@@ -9,7 +9,7 @@ defmodule ServerWeb.SangaboardMoveController do
   end
 
   def move_focus(conn, params) do
-    Autofocus.adjust_focus(params["step_size"])
+    {type, msg} = Autofocus.adjust_focus(params["step_size"])
     send_resp(conn, 200, "Adjusted focus!")
   end
 end

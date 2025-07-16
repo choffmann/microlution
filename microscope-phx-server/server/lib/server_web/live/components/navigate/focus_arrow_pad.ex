@@ -96,7 +96,8 @@ defmodule ServerWeb.Components.Navigate.FocusArrowPad do
   end
 
   def handle_event("move-z-in-direction", %{"direction" => "up"}, socket) do
-    Autofocus.adjust_focus(-socket.assigns.focus_step_size)
+    {type, msg} = Autofocus.adjust_focus(-socket.assigns.focus_step_size)
+    Process.send_after(self(), {:create_flash, type, msg}, 0)
     {:noreply, socket}
   end
 
@@ -112,7 +113,8 @@ defmodule ServerWeb.Components.Navigate.FocusArrowPad do
   end
 
   def handle_event("move-z-in-direction", %{"direction" => "down"}, socket) do
-    Autofocus.adjust_focus(socket.assigns.focus_step_size)
+    {type, msg} = Autofocus.adjust_focus(socket.assigns.focus_step_size)
+    Process.send_after(self(), {:create_flash, type, msg}, 0)
     {:noreply, socket}
   end
 end

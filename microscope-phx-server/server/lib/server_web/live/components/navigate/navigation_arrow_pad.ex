@@ -176,9 +176,10 @@ defmodule ServerWeb.Components.Navigate.NavigationArrowPad do
     settings = Settings.get_settings!(1)
     step_size = socket.assigns.step_size
 
-    update_minimap = Navigation.move_stage(direction, step_size)
+    {update_minimap, type, msg} = Navigation.move_stage(direction, step_size)
 
     socket = socket |> assign(:settings, Settings.get_settings!(1))
+    Process.send_after(self(), {:create_flash, type, msg}, 0)
 
     {:noreply,
      push_event(

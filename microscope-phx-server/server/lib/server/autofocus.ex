@@ -62,7 +62,7 @@ defmodule Server.Autofocus do
 
   def custom_autofocus() do
     video_path = "./autofocus1.mp4"
-    adjust_focus(4000)
+    {type, msg} = adjust_focus(4000)
     {output, 0} = System.cmd("python", ["./autofocus.py"])
     IO.inspect(output)
     #     System.shell(
@@ -80,14 +80,19 @@ defmodule Server.Autofocus do
           "current_z" => settings.current_z + focus_step_size
         })
 
-        Sanga.Board.safe_move_stage_z(focus_step_size)
+        # Sanga.Board.safe_move_stage_z(focus_step_size)
+        {:info, ""}
 
       focus_step_size < 0 and settings.current_z + focus_step_size > -settings.boundary_z ->
         Settings.update(1, %{
           "current_z" => settings.current_z + focus_step_size
         })
 
-        Sanga.Board.safe_move_stage_z(focus_step_size)
+        # Sanga.Board.safe_move_stage_z(focus_step_size)
+        {:info, ""}
+
+      true ->
+        {:error, ""}
     end
   end
 end

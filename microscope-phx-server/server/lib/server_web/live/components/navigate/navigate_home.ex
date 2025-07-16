@@ -1,6 +1,7 @@
 defmodule ServerWeb.Components.Navigate.NavigateHome do
   use ServerWeb, :live_component
   alias Server.Navigation
+  alias Server.Settings
 
   def render(assigns) do
     ~H"""
@@ -31,7 +32,7 @@ defmodule ServerWeb.Components.Navigate.NavigateHome do
   end
 
   def handle_event("set-focus-home", _params, socket) do
-    Settings.update(1, %{"currenz_z" => 0})
+    Settings.update(1, %{"current_z" => 0})
     {:noreply, socket |> push_navigate(to: ~p"/navigate")}
   end
 

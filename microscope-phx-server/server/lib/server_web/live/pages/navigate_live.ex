@@ -10,6 +10,7 @@ defmodule ServerWeb.NavigateLive do
     <div class="row h-100 sidebar-2">
       <div class="col-3 ml-3">
         <div class="row h-100 d-flex flex-column" style="border-right: 1px solid gray;">
+                <.flash_group flash={@flash} />
           <%= if @show_settings do %>
             <.live_component
               module={ServerWeb.Components.Navigate.NavigateSettings}
@@ -43,6 +44,15 @@ defmodule ServerWeb.NavigateLive do
   def handle_event("handle-navigate-sidebar", _params, socket) do
     socket = socket |> assign(:show_settings, !socket.assigns.show_settings)
     {:noreply, socket}
+  end
+
+  def handle_info(:clear_flash, socket) do
+    {:noreply, clear_flash(socket)}
+  end
+
+  def handle_info({:create_flash, type, msg}, socket) do
+    Process.send_after(self(), :clear_flash, 5000)
+    {:noreply, put_flash(socket, type, msg)}
   end
 
   def handle_info({:update_minimap, direction, step_size}, socket) do

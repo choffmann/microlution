@@ -16,7 +16,7 @@ defmodule Server.Navigation do
       "current_y" => settings.current_y + move_in_direction.y
     })
 
-    move_sanga(direction, step_size)
+    # move_sanga(direction, step_size)
 
     update_minimap(direction, step_size)
   end
@@ -66,21 +66,23 @@ defmodule Server.Navigation do
       if settings.current_y + move_in_direction.y > settings.boundary_y or
            settings.current_x + move_in_direction.x > settings.boundary_x do
         IO.inspect("Boundary Positive X")
-        no_minimap_update
+        {no_minimap_update, :error, ""}
       else
         if settings.boundary_y - settings.current_y >= move_in_direction.y or
              settings.boundary_x - settings.current_x >= move_in_direction.x do
           update_minimap = move_in_direction(direction, step_size)
+          {update_minimap, :info, ""}
         end
       end
     else
       if settings.current_y <= -settings.boundary_y or settings.current_x <= -settings.boundary_x do
         IO.inspect("Boundary Negative X")
-        no_minimap_update
+        {no_minimap_update, :error, ""}
       else
         if -settings.boundary_y <= settings.current_y + move_in_direction.y or
              -settings.boundary_x <= settings.current_x + move_in_direction.x do
           update_minimap = move_in_direction(direction, step_size)
+          {update_minimap, :info, ""}
         end
       end
     end
