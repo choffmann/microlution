@@ -3,26 +3,28 @@ use std::{fmt::Debug, time::Duration};
 use display_interface_spi::SPIInterface;
 use embedded_graphics::{
     mono_font::{
-        MonoTextStyle, MonoTextStyleBuilder,
-        ascii::{FONT_6X9, FONT_10X20},
-        iso_8859_3::FONT_9X18_BOLD,
+        MonoTextStyleBuilder,
+        ascii::FONT_10X20,
+        iso_8859_3::{FONT_4X6, FONT_9X18_BOLD},
     },
-    pixelcolor::{BinaryColor, Rgb565, raw::RawU16},
+    pixelcolor::Rgb565,
     prelude::*,
     primitives::{PrimitiveStyle, PrimitiveStyleBuilder, Rectangle},
-    text::{Text, renderer::CharacterStyle},
+    text::Text,
 };
 use embedded_layout::{
     align::{Align, horizontal, vertical},
-    layout::linear::{FixedMargin, LinearLayout, spacing::DistributeFill},
+    layout::linear::{FixedMargin, LinearLayout},
     prelude::*,
 };
 use linux_embedded_hal::{
     Delay, SpidevDevice,
     spidev::{SpiModeFlags, Spidev, SpidevOptions},
 };
+use log::debug;
 use rppal::gpio::Gpio;
 use scope_ui::{
+    client::{AppClient, AppConfig, OpenflexureAxis},
     display::{
         Flushable,
         ili9341::{DisplaySize240x320, Ili9341, Orientation},
@@ -36,7 +38,8 @@ const ROTARY_CLK: u8 = 17;
 const ROTARY_DT: u8 = 18;
 const ROTARY_SW: u8 = 27;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     env_logger::init();
     let gpio = Gpio::new().expect("Failed to setup gpio");
     let spidev = create_spi().expect("Failed to setup spi device");
@@ -49,6 +52,10 @@ fn main() {
     let rotary_sw = gpio.get(ROTARY_SW).expect("Invalid SW pin").into_input();
 
     let mut input = RotaryEncoder::new(rotary_clk, rotary_dt, rotary_sw);
+    let config = AppConfig {
+        openflexure_url: "http://localhost:5000".try_into().unwrap(),
+        phoenix_url: "http://localhost:4000".try_into().unwrap(),
+    };
 
     let iface = SPIInterface::new(spi, dc_pin);
     let display = Ili9341::new(
@@ -60,19 +67,20 @@ fn main() {
     )
     .unwrap();
 
-    let mut app = App::new(display);
+    let mut app = App::new(&config, display);
 
     app.clear();
     app.startup();
+    app.setup().await;
     std::thread::sleep(Duration::from_secs(3));
     app.clear();
 
     loop {
         if let Some(event) = input.poll() {
             match event {
-                scope_ui::input::InputEvent::Up => app.increase(),
-                scope_ui::input::InputEvent::Down => app.decrease(),
-                scope_ui::input::InputEvent::Select => {}
+                scope_ui::input::InputEvent::Up => app.increase().await,
+                scope_ui::input::InputEvent::Down => app.decrease().await,
+                scope_ui::input::InputEvent::Select => app.trigger_control_mode(),
                 scope_ui::input::InputEvent::Quit => {}
             }
             app.clear();
@@ -94,10 +102,23 @@ fn create_spi() -> Result<Spidev, std::io::Error> {
     Ok(spi)
 }
 
+struct MenuSelection {
+    name: &'static str,
+    value: i64,
+}
+
+impl MenuSelection {
+    fn new(name: &'static str, value: i64) -> Self {
+        Self { name, value }
+    }
+}
+
 struct App<D> {
+    client: AppClient,
     display: D,
     counter: u32,
     selection_idx: u32,
+    selections: Box<[MenuSelection]>,
     contol_mode: bool,
 }
 
@@ -105,13 +126,33 @@ impl<D> App<D>
 where
     D: DrawTarget,
 {
-    pub fn new(display: D) -> Self {
+    pub fn new(config: &AppConfig, display: D) -> Self {
+        let client = AppClient::new(config);
+        let selections = [
+            MenuSelection::new("X Axis", 0),
+            MenuSelection::new("Y Axis", 0),
+            MenuSelection::new("Z Axis", 0),
+        ];
         Self {
+            client,
             display,
+            selections: Box::new(selections),
             counter: 0,
             selection_idx: 0,
             contol_mode: false,
         }
+    }
+
+    pub async fn setup(&mut self) {
+        let flexure_values = self
+            .client
+            .get_openflexure_position()
+            .await
+            .unwrap_or_default();
+
+        self.selections[0].value = flexure_values.x;
+        self.selections[1].value = flexure_values.y;
+        self.selections[2].value = flexure_values.z;
     }
 }
 
@@ -139,23 +180,51 @@ where
     D: DrawTarget<Color = Rgb565, Error: Debug> + Flushable,
 {
     pub fn draw(&mut self) -> anyhow::Result<()> {
-        self.draw_menu()
-    }
-
-    fn draw_menu(&mut self) -> anyhow::Result<()> {
-        let display_area = self.display.bounding_box();
         let thick_stroke = PrimitiveStyle::with_stroke(Rgb565::WHITE, 3);
-
-        display_area
+        self.display
+            .bounding_box()
             .into_styled(thick_stroke)
             .draw(&mut self.display)
             .unwrap();
 
-        let text_style_selected = MonoTextStyleBuilder::new()
-            .font(&FONT_9X18_BOLD)
-            .text_color(Rgb565::BLACK)
-            .background_color(Rgb565::WHITE)
+        self.draw_header_status();
+        self.draw_menu()
+    }
+
+    fn draw_header_status(&mut self) {
+        let text_style = MonoTextStyleBuilder::new()
+            .font(&FONT_4X6)
+            .text_color(Rgb565::WHITE)
+            .background_color(if self.contol_mode {
+                Rgb565::CSS_ORANGE
+            } else {
+                Rgb565::CSS_GRAY
+            })
             .build();
+
+        LinearLayout::horizontal(Chain::new(Text::new(
+            "Control Mode",
+            Point::zero(),
+            text_style,
+        )))
+        .with_alignment(vertical::Top)
+        .arrange()
+        .align_to(
+            &self.display.bounding_box(),
+            horizontal::LeftToRight,
+            vertical::Top,
+        )
+        .draw(&mut self.display)
+        .unwrap();
+    }
+
+    fn trigger_control_mode(&mut self) {
+        self.contol_mode = !self.contol_mode;
+        debug!("switch control mode to {}", self.contol_mode);
+    }
+
+    fn draw_menu(&mut self) -> anyhow::Result<()> {
+        let display_area = self.display.bounding_box();
 
         let text_style = MonoTextStyleBuilder::new()
             .font(&FONT_9X18_BOLD)
@@ -167,12 +236,36 @@ where
             .text_color(Rgb565::CSS_ORANGE)
             .build();
 
-        // let text_style_backgound = MonoTextStyle::new(&FONT_9X18_BOLD, BinaryColor::Off)
-        //     .set_background_color(Some(BinaryColor::On));
+        let selector_style_invisible = MonoTextStyleBuilder::new()
+            .font(&FONT_9X18_BOLD)
+            .text_color(Rgb565::BLACK)
+            .build();
 
+        let mut selector = Vec::with_capacity(3);
         let selected = self.selection_idx % 3;
-        let selector = Text::new(">", Point::zero(), selector_style);
-        let x_axis = LinearLayout::horizontal(Chain::new(selector).append(Text::new(
+        match selected {
+            0 => {
+                selector.push(Text::new(">", Point::zero(), selector_style));
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
+            }
+            1 => {
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
+                selector.push(Text::new(">", Point::zero(), selector_style));
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
+            }
+            2 => {
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
+                selector.push(Text::new(">", Point::zero(), selector_style));
+            }
+            _ => {
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
+            }
+        }
+        let x_axis = LinearLayout::horizontal(Chain::new(selector[0]).append(Text::new(
             "X Axis",
             Point::zero(),
             text_style,
@@ -180,7 +273,7 @@ where
         .with_spacing(FixedMargin(5))
         .arrange();
 
-        let y_axis = LinearLayout::horizontal(Chain::new(selector).append(Text::new(
+        let y_axis = LinearLayout::horizontal(Chain::new(selector[1]).append(Text::new(
             "Y Axis",
             Point::zero(),
             text_style,
@@ -188,7 +281,7 @@ where
         .with_spacing(FixedMargin(5))
         .arrange();
 
-        let z_axis = LinearLayout::horizontal(Chain::new(selector).append(Text::new(
+        let z_axis = LinearLayout::horizontal(Chain::new(selector[2]).append(Text::new(
             "Z Axis",
             Point::zero(),
             text_style,
@@ -196,12 +289,40 @@ where
         .with_spacing(FixedMargin(5))
         .arrange();
 
-        LinearLayout::vertical(Chain::new(x_axis).append(y_axis).append(z_axis))
-            .with_alignment(horizontal::Center)
-            .arrange()
-            .align_to(&display_area, horizontal::Center, vertical::Center)
-            .draw(&mut self.display)
-            .unwrap();
+        LinearLayout::vertical(
+            Chain::new(
+                LinearLayout::horizontal(Chain::new(x_axis).append(Text::new(
+                    format!("{}", self.selections[0].value).as_str(),
+                    Point::zero(),
+                    text_style,
+                )))
+                .with_spacing(FixedMargin(64))
+                .arrange(),
+            )
+            .append(
+                LinearLayout::horizontal(Chain::new(y_axis).append(Text::new(
+                    format!("{}", self.selections[1].value).as_str(),
+                    Point::zero(),
+                    text_style,
+                )))
+                .with_spacing(FixedMargin(64))
+                .arrange(),
+            )
+            .append(
+                LinearLayout::horizontal(Chain::new(z_axis).append(Text::new(
+                    format!("{}", self.selections[2].value).as_str(),
+                    Point::zero(),
+                    text_style,
+                )))
+                .with_spacing(FixedMargin(64))
+                .arrange(),
+            ),
+        )
+        .with_alignment(horizontal::Center)
+        .arrange()
+        .align_to(&display_area, horizontal::Center, vertical::Center)
+        .draw(&mut self.display)
+        .unwrap();
 
         // Text::with_alignment(
         //     "Z Axis",
@@ -214,6 +335,7 @@ where
 
         // LinearLayout::vertical(Chain::new(x_axis).append(y_axis).append(z_axis))
         //     .with_alignment(horizontal::Center)
+        //
         //     .arrange()
         //     .align_to(&display_area, horizontal::Center, vertical::Center)
         //     .draw(&mut self.display)
@@ -246,14 +368,36 @@ where
             .unwrap();
     }
 
-    pub fn increase(&mut self) {
-        self.counter = self.counter.wrapping_add(1);
-        self.selection_idx = self.counter.wrapping_add(1);
+    pub async fn increase(&mut self) {
+        if !self.contol_mode {
+            self.selection_idx = self.counter.wrapping_add(1) % self.selections.len() as u32;
+        } else {
+            let axis = match self.selection_idx {
+                0 => OpenflexureAxis::X,
+                1 => OpenflexureAxis::Y,
+                2 => OpenflexureAxis::Z,
+                _ => return,
+            };
+            self.client
+                .move_openflexure(scope_ui::client::MoveDirection::Pos(axis))
+                .await;
+        }
     }
 
-    pub fn decrease(&mut self) {
-        self.counter = self.counter.wrapping_sub(1);
-        self.selection_idx = self.counter.wrapping_sub(1);
+    pub async fn decrease(&mut self) {
+        if !self.contol_mode {
+            self.selection_idx = self.counter.wrapping_sub(1) % self.selections.len() as u32;
+        } else {
+            let axis = match self.selection_idx {
+                0 => OpenflexureAxis::X,
+                1 => OpenflexureAxis::Y,
+                2 => OpenflexureAxis::Z,
+                _ => return,
+            };
+            self.client
+                .move_openflexure(scope_ui::client::MoveDirection::Neg(axis))
+                .await;
+        }
     }
 
     pub fn flush(&mut self) -> anyhow::Result<()> {
