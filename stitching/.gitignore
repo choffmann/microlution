@@ -1,4 +1,9 @@
 venv/
+venv312/
+tmp_tiles/
+debug/
+__pycache__
+.python-version
 
 img/
 
@@ -8,4 +13,3 @@ img/
 
 .vscode/
 *.code-workspace
-

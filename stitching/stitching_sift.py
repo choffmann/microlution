@@ -187,7 +187,7 @@ def build_positions(tiles):
                 # offset, score = compute_offset(current_tile["img"], neighbor_tile["img"], index)
                 offset, score = compute_offset_with_overlap(
                     current_tile["img"], neighbor_tile["img"], index,
-                    direction=direction, overlap_px=800, debug=True
+                    direction=direction, overlap_px=800, debug=False
                 )
 
                 if offset is not None and score >= 5:
