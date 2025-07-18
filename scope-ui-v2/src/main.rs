@@ -222,12 +222,12 @@ where
             Point::zero(),
             text_style,
         )))
-        .with_alignment(vertical::Top)
+        .with_alignment(vertical::Center)
         .arrange()
         .align_to(
             &self.display.bounding_box(),
             horizontal::LeftToRight,
-            vertical::Top,
+            vertical::Bottom,
         )
         .draw(&mut self.display)
         .unwrap();
