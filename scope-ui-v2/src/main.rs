@@ -330,10 +330,12 @@ where
                 .arrange(),
             )
             .append(
-                LinearLayout::horizontal(Chain::new(slider).append(Text::new(
-                    format!("{}", self.selections[3].value).as_str(),
-                    Point::zero(),
-                    text_style,
+                LinearLayout::horizontal(Chain::new(slider).append(LinearLayout::horizontal(
+                    Chain::new(Text::new("<- ", Point::zero(), text_style)).append(Text::new(
+                        "->",
+                        Point::zero(),
+                        text_style,
+                    )),
                 )))
                 .with_spacing(FixedMargin(64))
                 .arrange(),
