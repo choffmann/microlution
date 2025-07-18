@@ -1,4 +1,4 @@
-use std::{fmt::Debug, time::Duration};
+use std::{fmt::Debug, sync::mpsc, time::Duration};
 
 use display_interface_spi::SPIInterface;
 use embedded_graphics::{
@@ -52,6 +52,7 @@ async fn main() {
     let rotary_sw = gpio.get(ROTARY_SW).expect("Invalid SW pin").into_input();
 
     let mut input = RotaryEncoder::new(rotary_clk, rotary_dt, rotary_sw);
+
     let config = AppConfig {
         openflexure_url: "http://localhost:5000".try_into().unwrap(),
         phoenix_url: "http://localhost:4000".try_into().unwrap(),
@@ -75,8 +76,19 @@ async fn main() {
     std::thread::sleep(Duration::from_secs(3));
     app.clear();
 
+    // run poll input in other thread
+    let (tx, rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        loop {
+            if let Some(event) = input.poll() {
+                tx.send(event).unwrap();
+            }
+        }
+    });
+
     loop {
-        if let Some(event) = input.poll() {
+        if let Ok(event) = rx.recv() {
+            debug!("receive event {:?}", event);
             match event {
                 scope_ui::input::InputEvent::Up => app.increase().await,
                 scope_ui::input::InputEvent::Down => app.decrease().await,
@@ -116,7 +128,6 @@ impl MenuSelection {
 struct App<D> {
     client: AppClient,
     display: D,
-    counter: u32,
     selection_idx: u32,
     selections: Box<[MenuSelection]>,
     contol_mode: bool,
@@ -137,7 +148,6 @@ where
             client,
             display,
             selections: Box::new(selections),
-            counter: 0,
             selection_idx: 0,
             contol_mode: false,
         }
@@ -155,25 +165,6 @@ where
         self.selections[2].value = flexure_values.z;
     }
 }
-
-// impl<D> App<D>
-// where
-//     D: DrawTarget<Color = Rgb565, Error: Debug>,
-// {
-//     pub fn draw(&mut self, point: Point) -> anyhow::Result<()> {
-//         //let text_style = MonoTextStyle::new(&FONT_6X9, BinaryColor::On);
-//         let text_style = MonoTextStyle::new(&FONT_6X9, Rgb565::WHITE);
-//         Text::new("Hello, World!", point, text_style)
-//             .draw(&mut self.display)
-//             .unwrap();
-//
-//         Ok(())
-//     }
-//
-//     pub fn clear(&mut self) {
-//         self.display.clear(Rgb565::BLACK).unwrap();
-//     }
-// }
 
 impl<D> App<D>
 where
@@ -242,8 +233,7 @@ where
             .build();
 
         let mut selector = Vec::with_capacity(3);
-        let selected = self.selection_idx % 3;
-        match selected {
+        match dbg!(self.selection_idx) {
             0 => {
                 selector.push(Text::new(">", Point::zero(), selector_style));
                 selector.push(Text::new(">", Point::zero(), selector_style_invisible));
@@ -266,7 +256,7 @@ where
             }
         }
         let x_axis = LinearLayout::horizontal(Chain::new(selector[0]).append(Text::new(
-            "X Axis",
+            self.selections[0].name,
             Point::zero(),
             text_style,
         )))
@@ -274,7 +264,7 @@ where
         .arrange();
 
         let y_axis = LinearLayout::horizontal(Chain::new(selector[1]).append(Text::new(
-            "Y Axis",
+            self.selections[1].name,
             Point::zero(),
             text_style,
         )))
@@ -282,7 +272,7 @@ where
         .arrange();
 
         let z_axis = LinearLayout::horizontal(Chain::new(selector[2]).append(Text::new(
-            "Z Axis",
+            self.selections[2].name,
             Point::zero(),
             text_style,
         )))
@@ -324,23 +314,6 @@ where
         .draw(&mut self.display)
         .unwrap();
 
-        // Text::with_alignment(
-        //     "Z Axis",
-        //     display_area.center() - Point::new(0, 15),
-        //     text_style,
-        //     embedded_graphics::text::Alignment::Center,
-        // )
-        // .draw(&mut self.display)
-        // .unwrap();
-
-        // LinearLayout::vertical(Chain::new(x_axis).append(y_axis).append(z_axis))
-        //     .with_alignment(horizontal::Center)
-        //
-        //     .arrange()
-        //     .align_to(&display_area, horizontal::Center, vertical::Center)
-        //     .draw(&mut self.display)
-        //     .unwrap();
-
         Ok(())
     }
 
@@ -370,7 +343,7 @@ where
 
     pub async fn increase(&mut self) {
         if !self.contol_mode {
-            self.selection_idx = self.counter.wrapping_add(1) % self.selections.len() as u32;
+            self.selection_idx = self.selection_idx.wrapping_add(1) % self.selections.len() as u32;
         } else {
             let axis = match self.selection_idx {
                 0 => OpenflexureAxis::X,
@@ -378,15 +351,19 @@ where
                 2 => OpenflexureAxis::Z,
                 _ => return,
             };
-            self.client
+            let _ = self
+                .client
                 .move_openflexure(scope_ui::client::MoveDirection::Pos(axis))
                 .await;
         }
+
+        // update state
+        let _ = self.setup().await;
     }
 
     pub async fn decrease(&mut self) {
         if !self.contol_mode {
-            self.selection_idx = self.counter.wrapping_sub(1) % self.selections.len() as u32;
+            self.selection_idx = self.selection_idx.wrapping_sub(1) % self.selections.len() as u32;
         } else {
             let axis = match self.selection_idx {
                 0 => OpenflexureAxis::X,
@@ -394,16 +371,20 @@ where
                 2 => OpenflexureAxis::Z,
                 _ => return,
             };
-            self.client
+            let _ = self
+                .client
                 .move_openflexure(scope_ui::client::MoveDirection::Neg(axis))
                 .await;
+
+            // update state
+            let _ = self.setup().await;
         }
     }
 
-    pub fn flush(&mut self) -> anyhow::Result<()> {
-        self.display.flush().unwrap();
-        Ok(())
-    }
+    // pub fn flush(&mut self) -> anyhow::Result<()> {
+    //     self.display.flush().unwrap();
+    //     Ok(())
+    // }
 
     pub fn clear(&mut self) {
         // self.display.clear(BinaryColor::Off).unwrap();
