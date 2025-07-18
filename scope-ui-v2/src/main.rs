@@ -5,7 +5,6 @@ use std::{
 };
 
 use display_interface_spi::SPIInterface;
-use embedded_graphics::mono_font::iso_8859_3::FONT_4X6;
 use embedded_graphics::{
     mono_font::{MonoTextStyleBuilder, ascii::FONT_10X20, iso_8859_3::FONT_9X18_BOLD},
     pixelcolor::Rgb565,
@@ -72,7 +71,7 @@ async fn main() {
     let mut app = App::new(&config.clone(), display);
 
     app.clear();
-    app.startup();
+    app.splash_screen(Rgb565::CSS_ORANGE);
     app.setup().await;
     std::thread::sleep(Duration::from_secs(3));
     app.clear();
@@ -146,7 +145,10 @@ impl MenuSelection {
     }
 }
 
-struct App<D> {
+struct App<D>
+where
+    D: DrawTarget<Color = Rgb565, Error: Debug> + Flushable,
+{
     client: AppClient,
     display: D,
     selection_idx: u32,
@@ -154,9 +156,19 @@ struct App<D> {
     contol_mode: bool,
 }
 
+impl<D> Drop for App<D>
+where
+    D: DrawTarget<Color = Rgb565, Error: Debug> + Flushable,
+{
+    fn drop(&mut self) {
+        self.clear();
+        self.splash_screen(Rgb565::CSS_GRAY);
+    }
+}
+
 impl<D> App<D>
 where
-    D: DrawTarget,
+    D: DrawTarget<Color = Rgb565, Error: Debug> + Flushable,
 {
     pub fn new(config: &AppConfig, display: D) -> Self {
         let client = AppClient::new(config);
@@ -356,16 +368,14 @@ where
         Ok(())
     }
 
-    pub fn startup(&mut self) {
+    pub fn splash_screen(&mut self, color: Rgb565) {
         let display_area = self.display.bounding_box();
         let text_style = MonoTextStyleBuilder::new()
             .font(&FONT_10X20)
             .text_color(Rgb565::WHITE)
             .build();
 
-        let border_style = PrimitiveStyleBuilder::new()
-            .fill_color(Rgb565::CSS_ORANGE)
-            .build();
+        let border_style = PrimitiveStyleBuilder::new().fill_color(color).build();
 
         let text = Text::new("Microlution", Point::zero(), text_style);
         let border = Rectangle::new(Point::zero(), Size::new(text.size().width, 4))
