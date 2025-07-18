@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use embedded_hal::digital::InputPin;
 use log::debug;
 
@@ -53,6 +55,7 @@ where
         self.btn_state = (self.btn_state << 1) | sw_value as u16 | 0xfe00;
         if self.btn_state == 0xff00 {
             debug!("rotary encoder button click");
+            std::thread::sleep(Duration::from_millis(200));
             return Some(InputEvent::Select);
         }
 
