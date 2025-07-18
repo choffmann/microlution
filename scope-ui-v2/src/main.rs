@@ -53,10 +53,10 @@ async fn main() {
 
     let mut input = RotaryEncoder::new(rotary_clk, rotary_dt, rotary_sw);
 
-    let config = Arc::new(AppConfig {
+    let config = AppConfig {
         openflexure_url: "http://localhost:5000".try_into().unwrap(),
         phoenix_url: "http://localhost:4000".try_into().unwrap(),
-    });
+    };
 
     let iface = SPIInterface::new(spi, dc_pin);
     let display = Ili9341::new(
@@ -68,7 +68,7 @@ async fn main() {
     )
     .unwrap();
 
-    let mut app = App::new(&config.clone(), display);
+    let mut app = App::new(&config, display);
 
     app.clear();
     app.splash_screen(Rgb565::CSS_ORANGE);
@@ -86,19 +86,6 @@ async fn main() {
         }
     });
 
-    // check for updates
-    let (pos_tx, pos_rx) = mpsc::channel();
-    std::thread::spawn(async move || {
-        let client = AppClient::new(&config.clone());
-        loop {
-            let response = client.get_openflexure_position().await;
-            if response.is_ok() {
-                pos_tx.send(response.unwrap()).unwrap();
-            }
-            std::thread::sleep(Duration::from_secs(3));
-        }
-    });
-
     loop {
         if let Ok(event) = event_rx.recv() {
             debug!("receive event {:?}", event);
@@ -108,12 +95,6 @@ async fn main() {
                 scope_ui::input::InputEvent::Select => app.trigger_control_mode(),
                 scope_ui::input::InputEvent::Quit => {}
             }
-            app.clear();
-        }
-
-        if let Ok(pos_state) = pos_rx.recv() {
-            debug!("receive position event {:?}", pos_state);
-            app.update_states(pos_state);
             app.clear();
         }
 
