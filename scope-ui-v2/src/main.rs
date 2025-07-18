@@ -1,4 +1,8 @@
-use std::{fmt::Debug, sync::mpsc, time::Duration};
+use std::{
+    fmt::Debug,
+    sync::{Arc, mpsc},
+    time::Duration,
+};
 
 use display_interface_spi::SPIInterface;
 use embedded_graphics::{
@@ -24,7 +28,7 @@ use linux_embedded_hal::{
 use log::debug;
 use rppal::gpio::Gpio;
 use scope_ui::{
-    client::{AppClient, AppConfig, OpenflexureAxis},
+    client::{AppClient, AppConfig, OpenFlexurePosition, OpenflexureAxis},
     display::{
         Flushable,
         ili9341::{DisplaySize240x320, Ili9341, Orientation},
@@ -53,10 +57,10 @@ async fn main() {
 
     let mut input = RotaryEncoder::new(rotary_clk, rotary_dt, rotary_sw);
 
-    let config = AppConfig {
+    let config = Arc::new(AppConfig {
         openflexure_url: "http://localhost:5000".try_into().unwrap(),
         phoenix_url: "http://localhost:4000".try_into().unwrap(),
-    };
+    });
 
     let iface = SPIInterface::new(spi, dc_pin);
     let display = Ili9341::new(
@@ -77,17 +81,30 @@ async fn main() {
     app.clear();
 
     // run poll input in other thread
-    let (tx, rx) = mpsc::channel();
+    let (event_tx, event_rx) = mpsc::channel();
     std::thread::spawn(move || {
         loop {
             if let Some(event) = input.poll() {
-                tx.send(event).unwrap();
+                event_tx.send(event).unwrap();
             }
         }
     });
 
+    // check for updates
+    let (pos_tx, pos_rx) = mpsc::channel();
+    std::thread::spawn(async move || {
+        let client = AppClient::new(&config);
+        loop {
+            let response = client.get_openflexure_position().await;
+            if response.is_ok() {
+                pos_tx.send(response.unwrap()).unwrap();
+            }
+            std::thread::sleep(Duration::from_secs(3));
+        }
+    });
+
     loop {
-        if let Ok(event) = rx.recv() {
+        if let Ok(event) = event_rx.recv() {
             debug!("receive event {:?}", event);
             match event {
                 scope_ui::input::InputEvent::Up => app.increase().await,
@@ -97,6 +114,13 @@ async fn main() {
             }
             app.clear();
         }
+
+        if let Ok(pos_state) = pos_rx.recv() {
+            debug!("receive position event {:?}", pos_state);
+            app.update_states(pos_state);
+            app.clear();
+        }
+
         app.draw().unwrap();
         // app.flush().unwrap();
     }
@@ -212,6 +236,12 @@ where
     fn trigger_control_mode(&mut self) {
         self.contol_mode = !self.contol_mode;
         debug!("switch control mode to {}", self.contol_mode);
+    }
+
+    fn update_states(&mut self, data: OpenFlexurePosition) {
+        self.selections[0].value = data.x;
+        self.selections[1].value = data.y;
+        self.selections[2].value = data.z;
     }
 
     fn draw_menu(&mut self) -> anyhow::Result<()> {
