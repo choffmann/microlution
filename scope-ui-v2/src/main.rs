@@ -5,12 +5,9 @@ use std::{
 };
 
 use display_interface_spi::SPIInterface;
+use embedded_graphics::mono_font::iso_8859_3::FONT_4X6;
 use embedded_graphics::{
-    mono_font::{
-        MonoTextStyleBuilder,
-        ascii::FONT_10X20,
-        iso_8859_3::{FONT_4X6, FONT_9X18_BOLD},
-    },
+    mono_font::{MonoTextStyleBuilder, ascii::FONT_10X20, iso_8859_3::FONT_9X18_BOLD},
     pixelcolor::Rgb565,
     prelude::*,
     primitives::{PrimitiveStyle, PrimitiveStyleBuilder, Rectangle},
@@ -72,7 +69,7 @@ async fn main() {
     )
     .unwrap();
 
-    let mut app = App::new(&config, display);
+    let mut app = App::new(&config.clone(), display);
 
     app.clear();
     app.startup();
@@ -93,7 +90,7 @@ async fn main() {
     // check for updates
     let (pos_tx, pos_rx) = mpsc::channel();
     std::thread::spawn(async move || {
-        let client = AppClient::new(&config);
+        let client = AppClient::new(&config.clone());
         loop {
             let response = client.get_openflexure_position().await;
             if response.is_ok() {
@@ -167,6 +164,7 @@ where
             MenuSelection::new("X Axis", 0),
             MenuSelection::new("Y Axis", 0),
             MenuSelection::new("Z Axis", 0),
+            MenuSelection::new("Slider", 0),
         ];
         Self {
             client,
@@ -202,35 +200,7 @@ where
             .draw(&mut self.display)
             .unwrap();
 
-        self.draw_header_status();
         self.draw_menu()
-    }
-
-    fn draw_header_status(&mut self) {
-        let text_style = MonoTextStyleBuilder::new()
-            .font(&FONT_4X6)
-            .text_color(Rgb565::WHITE)
-            .background_color(if self.contol_mode {
-                Rgb565::CSS_ORANGE
-            } else {
-                Rgb565::CSS_GRAY
-            })
-            .build();
-
-        LinearLayout::horizontal(Chain::new(Text::new(
-            "Control Mode",
-            Point::zero(),
-            text_style,
-        )))
-        .with_alignment(vertical::Center)
-        .arrange()
-        .align_to(
-            &self.display.bounding_box(),
-            horizontal::LeftToRight,
-            vertical::Bottom,
-        )
-        .draw(&mut self.display)
-        .unwrap();
     }
 
     fn trigger_control_mode(&mut self) {
@@ -262,10 +232,20 @@ where
             .text_color(Rgb565::BLACK)
             .build();
 
+        let control_style = MonoTextStyleBuilder::new()
+            .font(&FONT_9X18_BOLD)
+            .text_color(if self.contol_mode {
+                Rgb565::CSS_ORANGE
+            } else {
+                Rgb565::CSS_GRAY
+            })
+            .build();
+
         let mut selector = Vec::with_capacity(3);
         match dbg!(self.selection_idx) {
             0 => {
                 selector.push(Text::new(">", Point::zero(), selector_style));
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
                 selector.push(Text::new(">", Point::zero(), selector_style_invisible));
                 selector.push(Text::new(">", Point::zero(), selector_style_invisible));
             }
@@ -273,8 +253,16 @@ where
                 selector.push(Text::new(">", Point::zero(), selector_style_invisible));
                 selector.push(Text::new(">", Point::zero(), selector_style));
                 selector.push(Text::new(">", Point::zero(), selector_style_invisible));
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
             }
             2 => {
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
+                selector.push(Text::new(">", Point::zero(), selector_style));
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
+            }
+            3 => {
+                selector.push(Text::new(">", Point::zero(), selector_style_invisible));
                 selector.push(Text::new(">", Point::zero(), selector_style_invisible));
                 selector.push(Text::new(">", Point::zero(), selector_style_invisible));
                 selector.push(Text::new(">", Point::zero(), selector_style));
@@ -309,6 +297,17 @@ where
         .with_spacing(FixedMargin(5))
         .arrange();
 
+        let slider = LinearLayout::horizontal(Chain::new(selector[3]).append(Text::new(
+            self.selections[3].name,
+            Point::zero(),
+            text_style,
+        )))
+        .with_spacing(FixedMargin(5))
+        .arrange();
+
+        let control_txt = format!("Control Mode: {}", self.contol_mode);
+        let control = Text::new(&control_txt, Point::zero(), control_style);
+
         LinearLayout::vertical(
             Chain::new(
                 LinearLayout::horizontal(Chain::new(x_axis).append(Text::new(
@@ -336,7 +335,17 @@ where
                 )))
                 .with_spacing(FixedMargin(64))
                 .arrange(),
-            ),
+            )
+            .append(
+                LinearLayout::horizontal(Chain::new(slider).append(Text::new(
+                    format!("{}", self.selections[3].value).as_str(),
+                    Point::zero(),
+                    text_style,
+                )))
+                .with_spacing(FixedMargin(64))
+                .arrange(),
+            )
+            .append(control),
         )
         .with_alignment(horizontal::Center)
         .arrange()
