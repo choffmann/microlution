@@ -6,10 +6,18 @@ defmodule ServerWeb.StitchingInspectLive do
     <div class="row h-100 sidebar-2">
       <div class="col-3 ml-3">
         <div class="row h-100 d-flex flex-row overflow-auto gap-3 p-3" style="max-height: 100vh; border-right: 1px solid gray; overflow-y: auto; overflow-x: hidden;">
-           <%= for img <- @stitched_images do %>
-           <div class="card stretched-link d-flex flex-column justify-content-center align-items-center" phx-click="set-image" phx-value-image={img}  style={"background-color: #{if img |> String.replace_prefix("/images/stitched_images/", "") == @selected_image|> String.replace_prefix("/images/stitched_images/", "") do "lightgrey" else "white" end};"}>
+           <%= for {img, id} <- @stitched_images do %>
+           <div class="card d-flex flex-column justify-content-center align-items-center" phx-click="set-image" phx-value-image={img}  style={"background-color: #{if img |> String.replace_prefix("/images/stitched_images/", "") == @selected_image|> String.replace_prefix("/images/stitched_images/", "") do "lightgrey" else "white" end};"}>
               <img class="p-4" src={img} alt="Image" />
               <p><%= img |> String.replace_prefix("/images/stitched_images/", "") %></p>
+              <button phx-click={show_modal("delete-stitched-image-confirm-#{id}")}>
+                <span class="bi-trash fs-3"></span>
+              </button>
+              <.modal id={"delete-stitched-image-confirm-#{id}"}>
+                <button phx-click="delete-stitched-image" phx-value-imgid={id}>
+                  <span class="bi-trash fs-3"></span>
+                </button>
+              </.modal>
            </div>
             <% end %>
         </div>
@@ -26,6 +34,8 @@ defmodule ServerWeb.StitchingInspectLive do
           </div>
       </div>
 
+
+
     </div>
     """
   end
@@ -36,6 +46,8 @@ defmodule ServerWeb.StitchingInspectLive do
     stitched_images =
       Path.wildcard("priv/static/images/stitched_images/stitched*.{png}")
       |> Enum.map(&String.replace_prefix(&1, "priv/static", ""))
+      |> Enum.with_index()
+      |> IO.inspect()
 
     socket =
       socket
@@ -49,8 +61,6 @@ defmodule ServerWeb.StitchingInspectLive do
   end
 
   def handle_event("set-image", params, socket) do
-    IO.inspect(params["image"])
-
     selected_image =
       if params["image"] == socket.assigns.selected_image do
         ""
@@ -66,5 +76,21 @@ defmodule ServerWeb.StitchingInspectLive do
        "update-stitching-inspector",
        %{"image" => params["image"]}
      )}
+  end
+
+  def handle_event("delete-stitched-image", %{"imgid" => imgid, "value" => ""}, socket) do
+    image_to_delete =
+      Path.wildcard("priv/static/images/stitched_images/stitched*.{png}")
+      |> Enum.map(&String.replace_prefix(&1, "priv/static", ""))
+      |> Enum.with_index()
+      |> Enum.find(fn {img, id} -> id == String.to_integer(imgid) end)
+      |> elem(0)
+      |> String.replace_prefix("/images/stitched_images/", "")
+
+    System.shell(
+      "rm -r #{Path.wildcard("priv/static/images/stitched_images/")}/#{image_to_delete}"
+    )
+
+    {:noreply, socket |> push_navigate(to: ~p"/stitching_inspect")}
   end
 end

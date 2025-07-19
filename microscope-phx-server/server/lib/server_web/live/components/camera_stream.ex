@@ -6,7 +6,7 @@ defmodule ServerWeb.Components.CameraStream do
   def render(assigns) do
     ~H"""
     <div class="">
-      <img class="stream-img" src={Api.camera_stream()} alt="MJPEG stream" style="height: 95vh;" />
+      <img class="stream-img" src={Api.camera_stream()} alt="MJPEG stream" style="height: 85vh;" />
     </div>
     """
   end

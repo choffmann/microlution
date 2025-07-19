@@ -23,6 +23,7 @@ defmodule Server.Navigation do
       "current_y" => settings.current_y + move_in_direction.y
     })
 
+    Process.send_after(self(), :update_info, 0)
     move_sanga(move_in_direction)
 
     update_minimap(direction, step_size)
@@ -277,6 +278,7 @@ defmodule Server.Navigation do
           end
       end
 
+      Process.send_after(self(), :update_info, 0)
       {:move, ""}
     end
   end

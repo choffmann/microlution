@@ -17,21 +17,17 @@ defmodule ServerWeb.Components.Navigate.NavigateControls do
       </div>
 
       <div class="col">
-        <div class="row">
-          <div class="col-8">
-            <.live_component
-              module={ServerWeb.Components.Navigate.NavigationArrowPad}
-              id="navigation-arrow-pad"
-            />
-          </div>
+        <.live_component
+          module={ServerWeb.Components.Navigate.NavigationArrowPad}
+          id="navigation-arrow-pad"
+        />
+      </div>
 
-          <div class="col-4">
-            <.live_component
-              module={ServerWeb.Components.Navigate.FocusArrowPad}
-              id="focus-arrow-pad"
-            />
-          </div>
-        </div>
+      <div class="col">
+        <.live_component
+          module={ServerWeb.Components.Navigate.FocusArrowPad}
+          id="focus-arrow-pad"
+        />
       </div>
 
       <div class="col">

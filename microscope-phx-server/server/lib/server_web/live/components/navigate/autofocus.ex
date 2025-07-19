@@ -21,7 +21,7 @@ defmodule ServerWeb.Components.Navigate.Autofocus do
             FAST
           </button>
 
-          <button
+          <%!-- <button
             class="btn btn-outline-primary"
             phx-click="autofocus"
             phx-value-type="medium"
@@ -45,7 +45,7 @@ defmodule ServerWeb.Components.Navigate.Autofocus do
             phx-target={@myself}
           >
             CUSTOM
-          </button>
+          </button> --%>
         </div>
       </div>
     </div>
