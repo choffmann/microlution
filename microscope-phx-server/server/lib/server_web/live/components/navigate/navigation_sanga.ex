@@ -108,23 +108,23 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
         # Sanga.Board.start_link()
 
         cond do
-          dir == "forwards" and
-              settings.boundary_sanga_end + sanga_step_size < settings.boundary_sanga_end ->
-            Sanga.Board.safe_move_slider(sanga_step_size)
+          dir == "forwards" ->
+            if settings.boundary_sanga_end + sanga_step_size < settings.boundary_sanga_end do
+              Sanga.Board.safe_move_slider(sanga_step_size)
 
-            Settings.update(1, %{
-              "current_sanga_x" => settings.current_sanga_x + sanga_step_size
-            })
+              Settings.update(1, %{
+                "current_sanga_x" => settings.current_sanga_x + sanga_step_size
+              })
+            end
 
-            socket
+          dir != "forwards" ->
+            if settings.boundary_sanga_start + sanga_step_size < settings.boundary_sanga_start do
+              Sanga.Board.safe_move_slider(-sanga_step_size)
 
-          dir != "forwards" and
-              settings.boundary_sanga_start + sanga_step_size < settings.boundary_sanga_start ->
-            Sanga.Board.safe_move_slider(-sanga_step_size)
-
-            Settings.update(1, %{
-              "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
-            })
+              Settings.update(1, %{
+                "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
+              })
+            end
         end
 
         # Sanga.Board.stop()

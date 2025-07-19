@@ -6,7 +6,14 @@ defmodule Server.Navigation do
   def move_in_direction(direction, step_size) do
     settings = Settings.get_settings!(1)
 
-    move_in_direction = get_navigate_direction_sanga(direction, step_size)
+    move_in_direction =
+      cond do
+        settings.navigation_minimap ->
+          get_navigate_direction(direction, step_size)
+
+        !settings.navigation_minimap ->
+          get_navigate_direction_sanga(direction, step_size)
+      end
 
     Settings.update(1, %{
       "current_x" => settings.current_x + move_in_direction.x
@@ -16,7 +23,7 @@ defmodule Server.Navigation do
       "current_y" => settings.current_y + move_in_direction.y
     })
 
-    # move_sanga(direction, step_size)
+    move_sanga(move_in_direction)
 
     update_minimap(direction, step_size)
   end
@@ -129,59 +136,59 @@ defmodule Server.Navigation do
   def get_navigate_direction_sanga(direction, step_size) do
     case direction do
       "up-left" ->
-        %{x: -step_size, y: -step_size}
+        %{x: step_size, y: step_size}
 
       "up" ->
-        %{x: 0, y: -step_size}
-
-      "up-right" ->
-        %{x: step_size, y: -step_size}
-
-      "down-left" ->
-        %{x: -step_size, y: step_size}
-
-      "down" ->
         %{x: 0, y: step_size}
 
-      "down-right" ->
+      "up-right" ->
+        %{x: -step_size, y: step_size}
+
+      "down-left" ->
         %{x: step_size, y: -step_size}
 
+      "down" ->
+        %{x: 0, y: -step_size}
+
+      "down-right" ->
+        %{x: -step_size, y: -step_size}
+
       "left" ->
-        %{x: -step_size, y: 0}
+        %{x: step_size, y: 0}
 
       "right" ->
-        %{x: -step_size, y: step_size}
+        %{x: -step_size, y: 0}
     end
   end
 
-  def move_sanga(direction, step_size) do
+  def move_sanga(direction) do
     Sanga.Board.safe_move_all_axes(0, 0, 0, 0)
+    Sanga.Board.safe_move_all_axes(direction.x, direction.y, 0, 0)
+    # case direction do
+    #   "up-left" ->
+    #     Sanga.Board.safe_move_all_axes(step_size, step_size, 0, 0)
 
-    case direction do
-      "up-left" ->
-        Sanga.Board.safe_move_all_axes(step_size, step_size, 0, 0)
+    #   "up" ->
+    #     Sanga.Board.safe_move_all_axes(step_size, step_size, 0, 0)
 
-      "up" ->
-        Sanga.Board.safe_move_stage_y(step_size)
+    #   "up-right" ->
+    #     Sanga.Board.safe_move_all_axes(-step_size, step_size, 0, 0)
 
-      "up-right" ->
-        Sanga.Board.safe_move_all_axes(-step_size, step_size, 0, 0)
+    #   "down-left" ->
+    #     Sanga.Board.safe_move_all_axes(step_size, -step_size, 0, 0)
 
-      "down-left" ->
-        Sanga.Board.safe_move_all_axes(step_size, -step_size, 0, 0)
+    #   "down" ->
+    #     Sanga.Board.safe_move_all_axes(step_size, step_size, 0, 0)
 
-      "down" ->
-        Sanga.Board.safe_move_stage_y(-step_size)
+    #   "down-right" ->
+    #     Sanga.Board.safe_move_all_axes(-step_size, -step_size, 0, 0)
 
-      "down-right" ->
-        Sanga.Board.safe_move_all_axes(-step_size, -step_size, 0, 0)
+    #   "left" ->
+    #     Sanga.Board.safe_move_all_axes(step_size, step_size, 0, 0)
 
-      "left" ->
-        Sanga.Board.safe_move_stage_x(step_size)
-
-      "right" ->
-        Sanga.Board.safe_move_stage_x(-step_size)
-    end
+    #   "right" ->
+    #     Sanga.Board.safe_move_all_axes(step_size, step_size, 0, 0)
+    # end
   end
 
   def get_navigate_direction_minimap(direction, step_size) do
