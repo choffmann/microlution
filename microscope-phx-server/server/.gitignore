@@ -36,3 +36,5 @@ npm-debug.log
 /assets/node_modules/
 
 /node_modules/
+
+*.sqlite3
