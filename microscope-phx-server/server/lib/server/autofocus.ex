@@ -62,7 +62,7 @@ defmodule Server.Autofocus do
 
   def custom_autofocus() do
     video_path = "./autofocus1.mp4"
-    adjust_focus(4000)
+    {type, msg} = adjust_focus(4000)
     {output, 0} = System.cmd("python", ["./autofocus.py"])
     IO.inspect(output)
     #     System.shell(
@@ -74,23 +74,35 @@ defmodule Server.Autofocus do
   def adjust_focus(focus_step_size) do
     settings = Settings.get_settings!(1)
 
+    cond do
+      focus_step_size > 0 and settings.current_z + focus_step_size < settings.boundary_z ->
+        Settings.update(1, %{
+          "current_z" => settings.current_z + focus_step_size
+        })
+
+        Sanga.Board.safe_move_stage_z(focus_step_size)
+        {:info, ""}
+
+      focus_step_size < 0 and settings.current_z + focus_step_size > -settings.boundary_z ->
+        Settings.update(1, %{
+          "current_z" => settings.current_z + focus_step_size
+        })
+
+        Sanga.Board.safe_move_stage_z(focus_step_size)
+        {:info, ""}
+
+      true ->
+        {:error, ""}
+    end
+  end
+
+  def move_to_home() do
+    settings = Settings.get_settings!(1)
+
     Settings.update(1, %{
-      "current_z" => settings.current_z + focus_step_size
+      "current_z" => 0
     })
 
-    a = %{x: 0, y: 0, z: focus_step_size}
-
-    case HTTPoison.post(
-           Api.move_stage(),
-           a |> Jason.encode!(),
-           [{"Content-Type", "application/json"}]
-         ) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        body
-
-      _ ->
-        IO.inspect("")
-        []
-    end
+    Sanga.Board.safe_move_stage_z(settings.current_z * -1)
   end
 end

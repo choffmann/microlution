@@ -24,6 +24,7 @@ defmodule ServerWeb.Router do
     live "/navigate", NavigateLive
     live "/capture", CaptureLive
     live "/stitching", StitchingLive
+    live "/stitching_inspect", StitchingInspectLive
     live "/automatic", AutomaticLive
     live "/storage", StorageLive
     live "/settings", SettingsLive
@@ -36,6 +37,9 @@ defmodule ServerWeb.Router do
     pipe_through :api
 
     post "/upload", Esp32CamController, :create
+    post "/move", SangaboardMoveController, :move
+    post "/move_focus", SangaboardMoveController, :move_focus
+    post "/move/slider", SangaboardMoveController, :move_slider
   end
 
   # Other scopes may use custom stacks.

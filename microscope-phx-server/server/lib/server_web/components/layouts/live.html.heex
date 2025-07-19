@@ -1,7 +1,9 @@
+
 <div class="containerz">
   <.live_component module={ServerWeb.SidebarLive} id="Sidebar" />
   <main>
     <div class="inner-content h-100">
+      <.flash_group flash={@flash} />
       {@inner_content}
     </div>
   </main>

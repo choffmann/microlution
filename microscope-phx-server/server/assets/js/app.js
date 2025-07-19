@@ -21,6 +21,7 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
+import StitchingInspectorHook from "./stitching-inspector"
 
 let hooks = {}
 hooks.RunJS = {
@@ -32,45 +33,85 @@ hooks.RunJS = {
   }
 };
 
+hooks.StitchingInspector = StitchingInspectorHook;
+
 hooks.MiniMap = {
   mounted() {
     const img = document.getElementById("myImage");
     const canvas = document.getElementById("myCanvas");
     const ctx = canvas.getContext("2d");
-    let lineWidth = "3"
-    let width = 10
-    let height = 10
-    let canvas_width = canvas.width
-    let canvas_height = canvas.height
-    let current_x = (canvas_width / 2) - width / 2;
-    let current_y = (canvas_height / 2) - height / 2;
-    let minimap_step_size_modifier = 400 // 400 = 0.5cm bei 10500 Steps Richtung Runter
-
-    ctx.beginPath();
-    ctx.rect(current_x, current_y, width, height);
-    ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = "red";
-    ctx.stroke();
+    let show_mm_features = JSON.parse(this.el.dataset.showminimapfeatures);
+    console.log(this.el.dataset)
+      let lineWidth = "2"
+      let width = 5
+      let height = 5
+      let canvas_width = canvas.width
+      let canvas_height = canvas.height
+      let minimap_step_size_modifier = 2300 // 2300 = 0.5cm bei 42000 Steps Richtung Runter
+      let current_x = ((canvas_width / 2) - width / 2 + 4);
+      let current_y = (((canvas_height / 2) - height / 2) + 20 + 4);
+      current_x += this.el.dataset.minimapx / minimap_step_size_modifier;
+      current_y += this.el.dataset.minimapy / minimap_step_size_modifier;
+      let border_start_point_x = (canvas_width / 2)
+      let border_start_point_y = (canvas_height / 2) + 20;
+      let border_radius_x = JSON.parse(this.el.dataset.boundaryx);
+      let border_radius_y = JSON.parse(this.el.dataset.boundaryy);
+      let border_radius_offset = 3500;
+  
+      if(show_mm_features) {
+        ctx.beginPath();
+        ctx.rect(current_x, current_y, width, height);
+        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = "red";
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.rect(border_start_point_x - (border_radius_x / minimap_step_size_modifier), border_start_point_y - (border_radius_y / minimap_step_size_modifier), ((border_radius_offset + border_radius_x * 2) /minimap_step_size_modifier), (border_radius_offset + border_radius_y * 2)/minimap_step_size_modifier);
+        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = "blue";
+        ctx.stroke();
+      } 
 
     this.handleEvent("update-minimap", (payload) => {
+      show_mm_features = JSON.parse(payload.show_mm_features)
       ctx.clearRect(0,0,500,500)
-      ctx.beginPath();
-      current_x += JSON.parse(payload.x / minimap_step_size_modifier);
-      current_y += JSON.parse(payload.y / minimap_step_size_modifier);
-      ctx.rect(current_x, current_y, width, height);
-      ctx.lineWidth = lineWidth;
-      ctx.strokeStyle = "red";
-      ctx.stroke();
+      if (show_mm_features) {
+        ctx.clearRect(0,0,500,500)
+        ctx.beginPath();
+        border_radius_x = JSON.parse(payload.boundaryx);
+        border_radius_y = JSON.parse(payload.boundaryy);
+        current_x += JSON.parse(payload.x / minimap_step_size_modifier);
+        current_y += JSON.parse(payload.y / minimap_step_size_modifier);
+        ctx.rect(current_x, current_y, width, height);
+        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = "red";
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.rect(border_start_point_x - (border_radius_x / minimap_step_size_modifier), border_start_point_y - (border_radius_y / minimap_step_size_modifier), ((border_radius_offset + border_radius_x * 2) /minimap_step_size_modifier), (border_radius_offset + border_radius_y * 2)/minimap_step_size_modifier);
+        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = "blue";
+        ctx.stroke();
+      }
     })
+
     this.handleEvent("reset-minimap", (payload) => {
       ctx.clearRect(0,0,500,500)
-      ctx.beginPath();
-      current_x = (canvas_width / 2) - width / 2;
-      current_y = (canvas_height / 2) - height / 2;
-      ctx.rect(current_x, current_y, width, height);
-      ctx.lineWidth = lineWidth;
-      ctx.strokeStyle = "red";
-      ctx.stroke();
+      if (show_mm_features) {
+        ctx.beginPath();
+        current_x = ((canvas_width / 2) - width / 2 + 4);
+        current_y = (((canvas_height / 2) - height / 2) + 20 + 4);
+        ctx.rect(current_x, current_y, width, height);
+        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = "red";
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.rect(border_start_point_x - (border_radius_x / minimap_step_size_modifier), border_start_point_y - (border_radius_y / minimap_step_size_modifier), ((border_radius_offset + border_radius_x * 2) /minimap_step_size_modifier), (border_radius_offset + border_radius_y * 2)/minimap_step_size_modifier);
+        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = "blue";
+        ctx.stroke();
+      }
     })
   }
 }
@@ -91,6 +132,7 @@ hooks.StitchingBoxesPreview = {
     let max_box_height = (canvas_height - offset_y) / y_steps - box_gap
     let current_x = offset_x;
     let current_y = offset_y;
+    let list_of_scanned_tiles = []
     console.log(canvas.width)
 
     drawBoxes(x_steps, y_steps)
@@ -105,6 +147,11 @@ hooks.StitchingBoxesPreview = {
 
       drawBoxes(x_steps, y_steps)
 
+    })
+
+    this.handleEvent("update-scanned-tiles", (payload) => {
+      console.log(payload.scanned_tile)
+      list_of_scanned_tiles.push(payload.scanned_tile)
     })
 
     this.handleEvent("update-stitching-boxes", (payload) => {

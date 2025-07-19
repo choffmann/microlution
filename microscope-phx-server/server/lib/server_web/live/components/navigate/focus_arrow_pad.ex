@@ -3,6 +3,7 @@ defmodule ServerWeb.Components.Navigate.FocusArrowPad do
 
   alias Server.Api
   alias Server.Settings
+  alias Server.Autofocus
 
   def render(assigns) do
     ~H"""
@@ -95,22 +96,8 @@ defmodule ServerWeb.Components.Navigate.FocusArrowPad do
   end
 
   def handle_event("move-z-in-direction", %{"direction" => "up"}, socket) do
-    # task =
-    #   Task.async(fn ->
-    #     System.cmd(Api.python(), [
-    #       "./autofocus_py.py",
-    #       "--steps",
-    #       Integer.to_string(-socket.assigns.focus_step_size)
-    #     ])
-    #   end)
-
-    adjust_focus(-socket.assigns.focus_step_size)
-
-    # IO.inspect(Task.await(task))
-
-    # {output, 0} = System.cmd("python", ["./autofocus2.py"])
-    # IO.inspect(output)
-
+    {type, msg} = Autofocus.adjust_focus(-socket.assigns.focus_step_size)
+    Process.send_after(self(), {:create_flash, type, msg}, 0)
     {:noreply, socket}
   end
 
@@ -126,46 +113,8 @@ defmodule ServerWeb.Components.Navigate.FocusArrowPad do
   end
 
   def handle_event("move-z-in-direction", %{"direction" => "down"}, socket) do
-    # {output, 0} = System.cmd("python", ["./autofocus2.py"])
-    # IO.inspect(output)
-    # :timer.sleep(2000 * 1)
-    # adjust_focus(socket.assigns.focus_step_size)
-
-    # task =
-    #   Task.async(fn ->
-    #     System.cmd(Api.python(), [
-    #       "./autofocus_py.py",
-    #       "--steps",
-    #       Integer.to_string(socket.assigns.focus_step_size)
-    #     ])
-    #   end)
-
-    adjust_focus(socket.assigns.focus_step_size)
-
-    # IO.inspect(Task.await(task))
-
+    {type, msg} = Autofocus.adjust_focus(socket.assigns.focus_step_size)
+    Process.send_after(self(), {:create_flash, type, msg}, 0)
     {:noreply, socket}
-  end
-
-  def adjust_focus(focus_step_size) do
-    settings = Settings.get_settings!(1)
-
-    Settings.update(1, %{
-      "current_z" => settings.current_z + focus_step_size
-    })
-
-    a = %{x: 0, y: 0, z: focus_step_size}
-
-    case HTTPoison.post(
-           Api.move_stage(),
-           a |> Jason.encode!(),
-           [{"Content-Type", "application/json"}]
-         ) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        body
-
-      _ ->
-        []
-    end
   end
 end

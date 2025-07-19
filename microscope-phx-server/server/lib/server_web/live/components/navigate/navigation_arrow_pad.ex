@@ -10,7 +10,7 @@ defmodule ServerWeb.Components.Navigate.NavigationArrowPad do
     <div>
       <div class="row gap-2">
         <p class="h5">Navigation</p>
-
+        <button phx-click="set-navigation-type" phx-target={@myself}>Navigation Type: Minimap -> {@navigation_minimap}</button>
         <div class="row ">
           <div class="d-flex justify-content-around">
             <button
@@ -125,10 +125,10 @@ defmodule ServerWeb.Components.Navigate.NavigationArrowPad do
         <div class="row">
           <p>Boundary X: +- {@settings.boundary_x}</p>
           <p>Boundary Y: +- {@settings.boundary_y}</p>
-          <%!-- <p>Boundary Z: +- {@settings.boundary_z}</p> --%>
+          <p>Boundary Z: +- {@settings.boundary_z}</p>
           <p>Current X: {@settings.current_x}</p>
           <p>Current Y: {@settings.current_y}</p>
-          <%!-- <p>Current Z: {@settings.current_z}</p> --%>
+          <p>Current Z: {@settings.current_z}</p>
         </div>
       </div>
     </div>
@@ -143,9 +143,20 @@ defmodule ServerWeb.Components.Navigate.NavigationArrowPad do
       socket
       |> assign(:form_step_size, to_form(form_step_size))
       |> assign(:step_size, settings.navigate_slider_value * settings.navigate_step_size)
+      |> assign(:navigation_minimap, settings.navigation_minimap)
       |> assign(:settings, settings)
 
     {:ok, socket}
+  end
+
+  def handle_event("set-navigation-type", _params, socket) do
+    settings = Settings.update(1, %{"navigation_minimap" => !socket.assigns.navigation_minimap})
+
+    socket =
+      socket
+      |> assign(:navigation_minimap, !socket.assigns.navigation_minimap)
+
+    {:noreply, socket}
   end
 
   def handle_event("set-step-size", %{"step_size" => step_size}, socket) do
@@ -165,31 +176,20 @@ defmodule ServerWeb.Components.Navigate.NavigationArrowPad do
     settings = Settings.get_settings!(1)
     step_size = socket.assigns.step_size
 
-    move_in_direction =
-      Navigation.get_navigate_direction(direction, step_size)
-
-    if move_in_direction.y > 0 or move_in_direction.x > 0 do
-      if settings.current_y + move_in_direction.y > settings.boundary_y or
-           settings.current_x + move_in_direction.x > settings.boundary_x do
-        IO.inspect("Boundary Positive X")
-      else
-        if settings.boundary_y - settings.current_y >= move_in_direction.y or
-             settings.boundary_x - settings.current_x >= move_in_direction.x do
-          Navigation.move_in_direction(direction, step_size)
-        end
-      end
-    else
-      if settings.current_y <= -settings.boundary_y or settings.current_x <= -settings.boundary_x do
-        IO.inspect("Boundary Negative X")
-      else
-        if -settings.boundary_y <= settings.current_y + move_in_direction.y or
-             -settings.boundary_x <= settings.current_x + move_in_direction.x do
-          Navigation.move_in_direction(direction, step_size)
-        end
-      end
-    end
+    {update_minimap, type, msg} = Navigation.move_stage(direction, step_size)
 
     socket = socket |> assign(:settings, Settings.get_settings!(1))
+    Process.send_after(self(), {:create_flash, type, msg}, 0)
+
+    {:noreply,
+     push_event(
+       socket,
+       "update-minimap",
+       update_minimap
+     )}
+  end
+
+  def handle_event("validate", _params, socket) do
     {:noreply, socket}
   end
 end

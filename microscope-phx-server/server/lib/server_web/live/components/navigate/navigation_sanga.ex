@@ -1,6 +1,8 @@
 defmodule ServerWeb.Components.Navigate.NavigationSanga do
   use ServerWeb, :live_component
   alias Server.Settings
+  alias Sanga.Board
+  alias Server.Navigation
 
   def render(assigns) do
     ~H"""
@@ -8,7 +10,7 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
       <div class="row">
         <div class="d-flex flex-column">
           <div class="col">
-            <p class="h5">Sanga</p>
+            <p class="h5">Move Slider</p>
           </div>
 
           <div class="col d-flex justify-content-around">
@@ -25,7 +27,7 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
               class="btn btn-outline-primary"
               phx-click="sanga-stop"
               phx-target={@myself}
-              disabled
+              disable
             >
               <span class="bi-sign-stop fs-4"></span>
             </button>
@@ -60,7 +62,10 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
 
             <p class="">{@sanga_step_size}</p>
           </div>
-
+          <p>Current Sanga X: {@settings.current_sanga_x}</p>
+          <p>Current Sanga Start: {@settings.boundary_sanga_start}</p>
+          <p>Current Sanga End: {@settings.boundary_sanga_end}</p>
+          <button class="btn btn-outline-primary" phx-click="set-sanga-start" phx-target={@myself}>Set Sanga Start 0</button>
           <p class="h5" style="color: red;">{@sanga_message}</p>
         </div>
       </div>
@@ -96,60 +101,24 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
   end
 
   def handle_event("sanga", %{"dir" => dir}, socket) do
-    {os, _} = :os.type()
     sanga_step_size = socket.assigns.sanga_step_size
-    settings = Settings.get_settings!(1)
+    {type, msg} = Navigation.sanga_move_slider(dir, sanga_step_size)
 
-    socket =
-      if os == :win32 do
-        socket |> assign(:sanga_message, "Sanga ist unter Windows nicht unterstützt.")
-      else
-        Sanga.Board.start_link()
+    socket = socket |> assign(:settings, Settings.get_settings!(1))
+    {:noreply, socket}
+  end
 
-        if dir == "forwards" do
-          Sanga.Board.move_slider(-sanga_step_size)
+  def handle_event("validate", _params, socket) do
+    {:noreply, socket}
+  end
 
-          Settings.update(1, %{
-            "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
-          })
-
-          Phoenix.PubSub.broadcast(
-            Server.PubSub,
-            "update-minimap",
-            {:update_minimap, "right", -sanga_step_size}
-          )
-
-          socket
-        else
-          Sanga.Board.move_slider(sanga_step_size)
-
-          Settings.update(1, %{
-            "current_sanga_x" => settings.current_sanga_x + sanga_step_size
-          })
-
-          Phoenix.PubSub.broadcast(
-            Server.PubSub,
-            "update-minimap",
-            {:update_minimap, "left", sanga_step_size}
-          )
-        end
-
-        Sanga.Board.stop()
-        socket
-      end
-
+  def handle_event("set-sanga-start", _params, socket) do
+    Settings.update(1, %{"current_sanga_x" => 0, "boundary_sanga_start" => 0})
     {:noreply, socket}
   end
 
   # def handle_event("sanga-stop", _unsigned_params, socket) do
   #   {os, _} = :os.type()
-
-  #   socket =
-  #     if os == :win32 do
-  #       socket |> assign(:sanga_message, "Sanga ist unter Windows nicht unterstützt.")
-  #     else
-  #       Sanga.Board.stop()
-  #     end
 
   #   {:noreply, socket}
   # end

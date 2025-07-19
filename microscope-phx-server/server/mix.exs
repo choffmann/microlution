@@ -69,14 +69,19 @@ defmodule Server.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:httpoison, "~> 2.0"}
-      # {:elixir_sanga, path: "../elixir_sanga"}
+      {:httpoison, "~> 2.0"},
+      {:twbs_icons,
+       github: "twbs/icons", spars: "icons", tag: "v1.11.3", app: false, compile: false, depth: 1}
     ]
 
     if os == :win32 do
       deps
     else
-      deps ++ [{:elixir_sanga, path: "../elixir_sanga"}]
+      deps ++
+        [
+          {:circuits_uart, ">= 1.5.3"},
+          {:elixir_make, "~> 0.6.0", override: true}
+        ]
     end
   end
 

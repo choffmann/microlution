@@ -96,6 +96,7 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
         </div>
 
         <div class="col w-100">
+          <p class="h5">Generated Tiles Preview</p>
           <canvas class="w-100" id="stitching-boxes-preview" phx-hook="StitchingBoxesPreview" height="200"></canvas>
         </div>
       </.simple_form>
@@ -209,7 +210,8 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
         step_size,
         sleep_time,
         autofocus_type,
-        direction
+        direction,
+        y
       ) do
     Enum.map(start_num..end_num, fn x ->
       if stitching_on do
@@ -218,9 +220,16 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
 
         datetime_string = DateTime.utc_now() |> DateTime.to_string()
 
+        filename =
+          "tile_#{if direction == "left" do
+            end_num - x
+          else
+            x
+          end}_#{y}"
+
         image_id =
           Capture.capture(%{
-            "filename" => "Stitching no. #{x} - #{datetime_string}",
+            "filename" => filename,
             "temporary" => "false",
             "full_resolution" => "false",
             "bayer" => "false",
@@ -230,37 +239,44 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
           })
 
         if x < end_num do
-          Navigation.move_in_direction(direction, step_size)
+          Navigation.move_stage(direction, step_size)
+          :timer.sleep(3000)
         else
-          Navigation.move_in_direction("down", step_size)
+          Navigation.move_stage("down", step_size)
+          :timer.sleep(3000)
         end
 
-        image_id
+        filename
       end
     end)
   end
 
-  def handle_event("start-stitching", _params, socket) do
-    image_ids =
-      Enum.map(0..(socket.assigns.y_steps - 1), fn x ->
-        direction =
-          if rem(x, 2) == 0 do
-            "right"
-          else
-            "left"
-          end
+  def stitching_run_y(socket) do
+    Enum.map(0..(socket.assigns.y_steps - 1), fn x ->
+      direction =
+        if rem(x, 2) == 0 do
+          "right"
+        else
+          "left"
+        end
 
-        stitching_run_x(
-          start_num = 0,
-          end_num =
-            socket.assigns.x_steps - 1,
-          stitching_on = socket.assigns.stitching_on,
-          step_size = socket.assigns.step_size,
-          sleep_time = socket.assigns.sleep_time,
-          autofocus_type = socket.assigns.autofocus_type,
-          direction = direction
-        )
-      end)
+      stitching_run_x(
+        start_num = 0,
+        end_num =
+          socket.assigns.x_steps - 1,
+        stitching_on = socket.assigns.stitching_on,
+        step_size = socket.assigns.step_size,
+        sleep_time = socket.assigns.sleep_time,
+        autofocus_type = socket.assigns.autofocus_type,
+        direction = direction,
+        y = x
+      )
+    end)
+  end
+
+  def handle_event("start-stitching", _params, socket) do
+    image_filenames =
+      stitching_run_y(socket)
       |> List.flatten()
       |> IO.inspect()
 
@@ -270,33 +286,83 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
 
     File.mkdir_p!(base_path)
 
-    case HTTPoison.post(Api.build_zip(), Jason.encode!(image_ids), [{"Content-Type", "application/json"}]) do
-      {:ok, %HTTPoison.Response{status_code: 201, body: body}} ->
-        session_id = Jason.decode!(body)["output"]["id"]
-        download_url = Api.download_zip(session_id)
-
-        case HTTPoison.get(download_url) do
-          {:ok, %HTTPoison.Response{status_code: 200, body: zip_binary}} ->
-            File.write!(zip_path, zip_binary)
-            IO.puts("ZIP gespeichert: #{zip_path}")
-
-            {output, code} = System.cmd("python3", ["/home/niklas/microlution/stitching/stitching_like_stitch2d.py", zip_path], stderr_to_stdout: true)
-            IO.puts("Stitching-Ausgabe:")
-            IO.puts(output)
-
-            if code == 0 do
-              IO.puts("Stitching erfolgreich!")
-            else
-              IO.puts("Fehler beim Stitching (Exit-Code #{code})")
-            end
-
-          err ->
-            IO.inspect(err, label: "Fehler beim Herunterladen der ZIP-Datei")
-        end
-
-      err ->
-        IO.inspect(err, label: "Fehler beim Erzeugen der ZIP-Datei")
+    if not File.dir?(
+         "/home/pi/niklas/microlution/microscope-phx-server/server/priv/static/images/stitched_images/"
+       ) do
+      System.shell(
+        "mkdir /home/pi/niklas/microlution/microscope-phx-server/server/priv/static/images/stitched_images/"
+      )
     end
+
+    Enum.map(image_filenames, fn filename ->
+      System.shell(
+        "cp /var/openflexure/data/micrographs/#{filename}.jpeg /home/pi/niklas/microlution/microscope-phx-server/server/priv/static/images/stitched_images/"
+      )
+    end)
+
+    {output, code} =
+      System.cmd(
+        "python3",
+        [
+          "/home/pi/niklas/microlution/stitching/stitching_like_stitch2d.py",
+          "/home/pi/niklas/microlution/microscope-phx-server/server/priv/static/images/stitched_images/"
+        ],
+        stderr_to_stdout: true
+      )
+
+    IO.puts("Stitching-Ausgabe:")
+    IO.puts(output)
+
+    if code == 0 do
+      IO.puts("Stitching erfolgreich!")
+    else
+      IO.puts("Fehler beim Stitching (Exit-Code #{code})")
+    end
+
+    Enum.map(image_filenames, fn filename ->
+      System.shell(
+        "rm -r /home/pi/niklas/microlution/microscope-phx-server/server/priv/static/images/stitched_images/#{filename}.jpeg"
+      )
+    end)
+
+    # case HTTPoison.post(Api.build_zip(), Jason.encode!(image_ids), [
+    #        {"Content-Type", "application/json"}
+    #      ]) do
+    #   {:ok, %HTTPoison.Response{status_code: 201, body: body}} ->
+    #     session_id = Jason.decode!(body)["output"]["id"]
+    #     download_url = Api.download_zip(session_id)
+
+    #     case HTTPoison.get(download_url) do
+    #       {:ok, %HTTPoison.Response{status_code: 200, body: zip_binary}} ->
+    #         File.write!(zip_path, zip_binary)
+    #         IO.puts("ZIP gespeichert: #{zip_path}")
+
+    #         {output, code} =
+    #           System.cmd(
+    #             "python3",
+    #             [
+    #               "/home/pi/niklas/microlution/stitching/stitching_like_stitch2d.py",
+    #               "/home/pi/stitch/tiles.zip"
+    #             ],
+    #             stderr_to_stdout: true
+    #           )
+
+    #         IO.puts("Stitching-Ausgabe:")
+    #         IO.puts(output)
+
+    #         if code == 0 do
+    #           IO.puts("Stitching erfolgreich!")
+    #         else
+    #           IO.puts("Fehler beim Stitching (Exit-Code #{code})")
+    #         end
+
+    #       err ->
+    #         IO.inspect(err, label: "Fehler beim Herunterladen der ZIP-Datei")
+    #     end
+
+    #   err ->
+    #     IO.inspect(err, label: "Fehler beim Erzeugen der ZIP-Datei")
+    # end
 
     # case HTTPoison.post(
     #        Api.build_zip(),

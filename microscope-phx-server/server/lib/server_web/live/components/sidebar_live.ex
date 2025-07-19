@@ -2,6 +2,7 @@ defmodule ServerWeb.SidebarLive do
   use ServerWeb, :live_component
 
   alias Server.NavConst
+  alias Server.Api
 
   def render(assigns) do
     ~H"""
@@ -16,7 +17,7 @@ defmodule ServerWeb.SidebarLive do
             menu_name="View"
             title="View"
             href={NavConst.view()}
-            icon="academic-cap"
+            icon="bi-eye"
           />
           <.sidebar_item
             class=""
@@ -58,37 +59,21 @@ defmodule ServerWeb.SidebarLive do
             href={NavConst.stitching()}
             icon="bi-x-diamond fs-2"
           />
-          <.sidebar_item
+                    <.sidebar_item
             class=""
             menu_active={@menu_active}
-            menu_name="Storage"
-            title="Storage"
-            href={NavConst.storage()}
-            icon="bi-sd-card-fill fs-2"
+            menu_name="Stitching Inspect"
+            title="Stitching Inspect"
+            href={NavConst.stitching_inspect()}
+            icon="bi-x-diamond fs-2"
           />
-          <.sidebar_item
+                    <.sidebar_a
             class=""
             menu_active={@menu_active}
-            menu_name="Settings"
-            title="Settings"
-            href={NavConst.settings()}
-            icon="bi-gear-fill fs-2"
-          />
-          <.sidebar_item
-            class=""
-            menu_active={@menu_active}
-            menu_name="Logging"
-            title="Logging"
-            href={NavConst.logging()}
-            icon="bi-exclamation-square-fill fs-2"
-          />
-          <.sidebar_item
-            class=""
-            menu_active={@menu_active}
-            menu_name="About"
-            title="About"
-            href={NavConst.about()}
-            icon="bi-info-circle-fill fs-2"
+            menu_name="OpenFlexure"
+            title="OpenFlexure"
+            href={Api.open_flexure_site()}
+            icon="bi-x-diamond fs-2"
           />
         </div>
       </div>
@@ -106,6 +91,7 @@ defmodule ServerWeb.SidebarLive do
         ServerWeb.CaptureLive -> "Capture"
         ServerWeb.AutomaticLive -> "Automatic"
         ServerWeb.StitchingLive -> "Stitching"
+        ServerWeb.StitchingInspectLive -> "Stitching Inspect"
         ServerWeb.StorageLive -> "Storage"
         ServerWeb.SettingsLive -> "Settings"
         ServerWeb.LoggingLive -> "Logging"
@@ -130,6 +116,19 @@ defmodule ServerWeb.SidebarLive do
       <span class={"#{@icon} sidebar-item-icon"}></span>
       <h5>{@title}</h5>
     </.link>
+    """
+  end
+
+  def sidebar_a(assigns) do
+    ~H"""
+    <a
+      href={@href}
+      class={"#{@class} #{if @menu_active == @menu_name do "active" end}"}
+      title=""
+    >
+      <span class={"#{@icon} sidebar-item-icon"}></span>
+      <h5>{@title}</h5>
+    </a>
     """
   end
 end

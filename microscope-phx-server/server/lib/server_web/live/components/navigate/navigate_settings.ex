@@ -1,6 +1,8 @@
 defmodule ServerWeb.Components.Navigate.NavigateSettings do
   use ServerWeb, :live_component
+
   alias Server.Settings
+  alias Server.Navigation
 
   def render(assigns) do
     ~H"""
@@ -33,6 +35,20 @@ defmodule ServerWeb.Components.Navigate.NavigateSettings do
             field={@navigate_settings_form[:boundary_z]}
             type="number"
             value={@settings.boundary_z}
+          />
+          <.input
+            id="boundary_sanga_start"
+            label="Boundary Sanga Start"
+            field={@navigate_settings_form[:boundary_sanga_start]}
+            type="number"
+            value={@settings.boundary_sanga_start}
+          />
+          <.input
+            id="boundary_sanga_end"
+            label="Boundary Sanga End"
+            field={@navigate_settings_form[:boundary_sanga_end]}
+            type="number"
+            value={@settings.boundary_sanga_end}
           />
         </div>
 
@@ -75,7 +91,9 @@ defmodule ServerWeb.Components.Navigate.NavigateSettings do
       "boundary_z" => 0,
       "navigate_step_size" => 0,
       "focus_step_size" => 0,
-      "sange_step_size" => 0
+      "sange_step_size" => 0,
+      "boundary_sanga_start" => 0,
+      "boundary_sanga_end" => 0
     }
 
     socket =
@@ -88,6 +106,12 @@ defmodule ServerWeb.Components.Navigate.NavigateSettings do
 
   def handle_event("validate", params, socket) do
     Settings.update(1, params)
-    {:noreply, socket}
+
+    {:noreply,
+     push_event(
+       socket,
+       "update-minimap",
+       Navigation.refresh_minimap()
+     )}
   end
 end

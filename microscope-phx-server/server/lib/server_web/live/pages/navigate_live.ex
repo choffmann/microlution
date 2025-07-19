@@ -45,26 +45,61 @@ defmodule ServerWeb.NavigateLive do
     {:noreply, socket}
   end
 
-  def handle_info({:update_minimap, direction, step_size}, socket) do
-    IO.inspect("Update Minimap: #{direction} - #{step_size}")
-
-    move_in_direction =
-      Navigation.get_navigate_direction_minimap(direction, step_size) |> IO.inspect()
-
-    {:noreply,
-     push_event(
-       socket,
-       "update-minimap",
-       move_in_direction
-     )}
+  def handle_info(:clear_flash, socket) do
+    {:noreply, clear_flash(socket)}
   end
 
-  def handle_event("update-minimap", _params, socket) do
-    {:noreply,
-     push_event(
-       socket,
-       "update-minimap",
-       %{x: Jason.encode!(50), y: Jason.encode!(50)}
-     )}
+  def handle_info({:create_flash, type, msg}, socket) do
+    Process.send_after(self(), :clear_flash, 5000)
+    {:noreply, put_flash(socket, type, msg)}
+  end
+
+  def handle_info({:update_minimap, direction, step_size}, socket) do
+    # IO.inspect("Update Minimap: #{direction} - #{step_size}")
+    # settings = Settings.get_settings!(1)
+
+    # move_in_direction =
+    #   Navigation.get_navigate_direction_minimap(direction, step_size) |> IO.inspect()
+
+    # boundaries = %{boundaryx: settings.boundary_x, boundaryy: settings.boundary_y}
+
+    # Settings.update(1, %{
+    #   "minimap_x" => settings.minimap_x + move_in_direction.x,
+    #   "minimap_y" => settings.minimap_y + move_in_direction.y
+    # })
+
+    # {:noreply,
+    #  push_event(
+    #    socket,
+    #    "update-minimap",
+    #    Map.merge(move_in_direction, boundaries)
+    #  )}
+    {:noreply, socket}
+  end
+
+  # def handle_event("update-minimap", _params, socket) do
+  #   settings = Settings.get_settings!(1)
+
+  #   move_in_direction =
+  #     Navigation.get_navigate_direction_minimap(direction, step_size) |> IO.inspect()
+
+  #   boundaries = %{boundaryx: settings.boundary_x, boundaryy: settings.boundary_y}
+
+  #   Settings.update(1, %{
+  #     "minimap_x" => settings.minimap_x + move_in_direction.x,
+  #     "minimap_y" => settings.minimap_y + move_in_direction.y
+  #   })
+
+  #   {:noreply,
+  #    push_event(
+  #      socket,
+  #      "update-minimap",
+  #      Map.merge(move_in_direction, boundaries)
+  #    )}
+  # end
+
+  def handle_info({:circuits_uart, "ttyAMA0", "stopped\r"}, socket) do
+    IO.inspect("STOPPED CIRCUITS UART")
+    {:noreply, socket}
   end
 end
