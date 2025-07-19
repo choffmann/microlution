@@ -127,7 +127,7 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
           end
 
         dir != "forwards" ->
-          if settings.current_sanga_x + sanga_step_size >= settings.boundary_sanga_start do
+          if settings.current_sanga_x + -sanga_step_size >= settings.boundary_sanga_start do
             Sanga.Board.safe_move_slider(-sanga_step_size)
 
             Settings.update(1, %{
