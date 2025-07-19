@@ -142,7 +142,7 @@ defmodule ServerWeb.Components.CameraStreamMm do
 
   def handle_event("move-slider", _params, socket) do
     Settings.update(1, %{"stream_mm" => !socket.assigns.stream_mm})
-    Navigation.sanga_move_slider("forwards", 42000)
+    {type, msg} = Navigation.sanga_move_slider("forwards", 42000)
 
     {:noreply, socket}
   end

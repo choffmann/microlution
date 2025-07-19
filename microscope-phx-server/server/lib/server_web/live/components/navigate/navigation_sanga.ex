@@ -102,7 +102,7 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
 
   def handle_event("sanga", %{"dir" => dir}, socket) do
     sanga_step_size = socket.assigns.sanga_step_size
-    Navigation.sanga_move_slider(dir, sanga_step_size)
+    {type, msg} = Navigation.sanga_move_slider(dir, sanga_step_size)
 
     socket = socket |> assign(:settings, Settings.get_settings!(1))
     {:noreply, socket}

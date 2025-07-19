@@ -265,28 +265,29 @@ defmodule Server.Navigation do
     end
 
     if os == :win32 do
-      socket |> assign(:sanga_message, "Sanga ist unter Windows nicht unterstützt.")
+      {:sanga_message, "Sanga ist unter Windows nicht unterstützt."}
     else
-    end
+      cond do
+        dir == "forwards" ->
+          if settings.current_sanga_x + sanga_step_size <= settings.boundary_sanga_end do
+            Sanga.Board.safe_move_slider(sanga_step_size)
 
-    cond do
-      dir == "forwards" ->
-        if settings.current_sanga_x + sanga_step_size <= settings.boundary_sanga_end do
-          Sanga.Board.safe_move_slider(sanga_step_size)
+            Settings.update(1, %{
+              "current_sanga_x" => settings.current_sanga_x + sanga_step_size
+            })
+          end
 
-          Settings.update(1, %{
-            "current_sanga_x" => settings.current_sanga_x + sanga_step_size
-          })
-        end
+        dir != "forwards" ->
+          if settings.current_sanga_x + -sanga_step_size >= settings.boundary_sanga_start do
+            Sanga.Board.safe_move_slider(-sanga_step_size)
 
-      dir != "forwards" ->
-        if settings.current_sanga_x + -sanga_step_size >= settings.boundary_sanga_start do
-          Sanga.Board.safe_move_slider(-sanga_step_size)
+            Settings.update(1, %{
+              "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
+            })
+          end
+      end
 
-          Settings.update(1, %{
-            "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
-          })
-        end
+      {:move, ""}
     end
   end
 end
