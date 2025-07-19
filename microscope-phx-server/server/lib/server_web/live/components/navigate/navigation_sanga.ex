@@ -2,7 +2,7 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
   use ServerWeb, :live_component
   alias Server.Settings
   alias Sanga.Board
-  alias Sanga.Navigation
+  alias Server.Navigation
 
   def render(assigns) do
     ~H"""

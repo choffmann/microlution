@@ -39,6 +39,7 @@ defmodule ServerWeb.Router do
     post "/upload", Esp32CamController, :create
     post "/move", SangaboardMoveController, :move
     post "/move_focus", SangaboardMoveController, :move_focus
+    post "/move/slider", SangaboardMoveController, :move_slider
   end
 
   # Other scopes may use custom stacks.
