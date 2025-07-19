@@ -23,7 +23,7 @@ defmodule Server.Navigation do
       "current_y" => settings.current_y + move_in_direction.y
     })
 
-    move_sanga(move_in_direction)
+    # move_sanga(move_in_direction)
 
     update_minimap(direction, step_size)
   end
@@ -32,7 +32,8 @@ defmodule Server.Navigation do
     settings = Settings.get_settings!(1)
 
     move_in_direction =
-      get_navigate_direction_minimap(direction, step_size) |> IO.inspect()
+      get_navigate_direction_minimap(direction, step_size, settings.navigation_minimap)
+      |> IO.inspect()
 
     boundaries = %{boundaryx: settings.boundary_x, boundaryy: settings.boundary_y}
 
@@ -161,89 +162,92 @@ defmodule Server.Navigation do
     end
   end
 
-  def move_sanga(direction) do
-    Sanga.Board.safe_move_all_axes(0, 0, 0, 0)
-    Sanga.Board.safe_move_all_axes(direction.x, direction.y, 0, 0)
-    # case direction do
-    #   "up-left" ->
-    #     Sanga.Board.safe_move_all_axes(step_size, step_size, 0, 0)
-
-    #   "up" ->
-    #     Sanga.Board.safe_move_all_axes(step_size, step_size, 0, 0)
-
-    #   "up-right" ->
-    #     Sanga.Board.safe_move_all_axes(-step_size, step_size, 0, 0)
-
-    #   "down-left" ->
-    #     Sanga.Board.safe_move_all_axes(step_size, -step_size, 0, 0)
-
-    #   "down" ->
-    #     Sanga.Board.safe_move_all_axes(step_size, step_size, 0, 0)
-
-    #   "down-right" ->
-    #     Sanga.Board.safe_move_all_axes(-step_size, -step_size, 0, 0)
-
-    #   "left" ->
-    #     Sanga.Board.safe_move_all_axes(step_size, step_size, 0, 0)
-
-    #   "right" ->
-    #     Sanga.Board.safe_move_all_axes(step_size, step_size, 0, 0)
-    # end
-  end
-
-  def get_navigate_direction_minimap(direction, step_size) do
-    case direction do
-      "up" ->
-        %{x: -step_size, y: -step_size}
-
-      "down" ->
-        %{x: step_size, y: step_size}
-
-      "left" ->
-        %{x: step_size, y: -step_size}
-
-      "right" ->
-        %{x: -step_size, y: step_size}
-
-      "up-left" ->
-        %{x: 0, y: -step_size}
-
-      "up-right" ->
-        %{x: -step_size, y: 0}
-
-      "down-left" ->
-        %{x: step_size, y: 0}
-
-      "down-right" ->
-        %{x: 0, y: step_size}
-    end
-  end
-
   def get_navigate_direction(direction, step_size) do
     case direction do
       "up" ->
-        %{x: 0, y: -step_size}
+        %{x: step_size, y: step_size}
 
       "down" ->
-        %{x: 0, y: step_size}
-
-      "left" ->
-        %{x: -step_size, y: 0}
-
-      "right" ->
-        %{x: step_size, y: 0}
-
-      "up-left" ->
         %{x: -step_size, y: -step_size}
 
-      "up-right" ->
-        %{x: step_size, y: -step_size}
-
-      "down-left" ->
+      "left" ->
         %{x: -step_size, y: step_size}
 
+      "right" ->
+        %{x: step_size, y: -step_size}
+
+      "up-left" ->
+        %{x: 0, y: step_size}
+
+      "up-right" ->
+        %{x: step_size, y: 0}
+
+      "down-left" ->
+        %{x: -step_size, y: 0}
+
       "down-right" ->
-        %{x: step_size, y: step_size}
+        %{x: 0, y: -step_size}
+    end
+  end
+
+  def move_sanga(direction) do
+    Sanga.Board.safe_move_all_axes(0, 0, 0, 0)
+    Sanga.Board.safe_move_all_axes(direction.x, direction.y, 0, 0)
+  end
+
+  def get_navigate_direction_minimap(direction, step_size, navigation_minimap) do
+    if navigation_minimap do
+      case direction do
+        "up" ->
+          %{x: 0, y: -step_size}
+
+        "down" ->
+          %{x: 0, y: step_size}
+
+        "left" ->
+          %{x: -step_size, y: 0}
+
+        "right" ->
+          %{x: step_size, y: 0}
+
+        "up-left" ->
+          %{x: -step_size, y: -step_size}
+
+        "up-right" ->
+          %{x: step_size, y: -step_size}
+
+        "down-left" ->
+          %{x: -step_size, y: step_size}
+
+        "down-right" ->
+          %{x: step_size, y: step_size}
+      end
+    else
+      case direction do
+        "up" ->
+          %{x: -step_size, y: -step_size}
+
+        "down" ->
+          %{x: step_size, y: step_size}
+
+        "left" ->
+          %{x: step_size, y: -step_size}
+
+        "right" ->
+          %{x: -step_size, y: step_size}
+
+        "up-left" ->
+          %{x: 0, y: -step_size}
+
+        "up-right" ->
+          %{x: -step_size, y: 0}
+
+        "down-left" ->
+          %{x: step_size, y: 0}
+
+        "down-right" ->
+          %{x: 0, y: step_size}
+      end
     end
   end
 end
