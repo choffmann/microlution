@@ -35,22 +35,22 @@ defmodule ServerWeb.SidebarLive do
             href={NavConst.navigate()}
             icon="bi-dpad-fill fs-2"
           />
-          <.sidebar_item
+          <%!-- <.sidebar_item
             class=""
             menu_active={@menu_active}
             menu_name="Capture"
             title="Capture"
             href={NavConst.capture()}
             icon="bi-camera-fill fs-2"
-          />
-          <.sidebar_item
+          /> --%>
+          <%!-- <.sidebar_item
             class=""
             menu_active={@menu_active}
             menu_name="Automatic"
             title="Automatic"
             href={NavConst.automatic()}
             icon="bi-radioactive fs-2"
-          />
+          /> --%>
           <.sidebar_item
             class=""
             menu_active={@menu_active}
@@ -67,14 +67,14 @@ defmodule ServerWeb.SidebarLive do
             href={NavConst.stitching_inspect()}
             icon="bi-x-diamond fs-2"
           />
-                    <.sidebar_a
+                    <%!-- <.sidebar_a
             class=""
             menu_active={@menu_active}
             menu_name="OpenFlexure"
             title="OpenFlexure"
             href={Api.open_flexure_site()}
             icon="bi-x-diamond fs-2"
-          />
+          /> --%>
         </div>
       </div>
     </aside>

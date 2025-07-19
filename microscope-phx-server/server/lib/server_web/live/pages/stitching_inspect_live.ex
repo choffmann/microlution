@@ -14,7 +14,7 @@ defmodule ServerWeb.StitchingInspectLive do
                 <span class="bi-trash fs-3"></span>
               </button>
               <.modal id={"delete-stitched-image-confirm-#{id}"}>
-                <button phx-click="delete-stitched-image" phx-value-id={id}>
+                <button phx-click="delete-stitched-image" phx-value-imgid={id}>
                   <span class="bi-trash fs-3"></span>
                 </button>
               </.modal>
@@ -78,12 +78,12 @@ defmodule ServerWeb.StitchingInspectLive do
      )}
   end
 
-  def handle_event("delete-stitched-image", %{"id" => id, "value" => ""}, socket) do
+  def handle_event("delete-stitched-image", %{"imgid" => imgid, "value" => ""}, socket) do
     image_to_delete =
       Path.wildcard("priv/static/images/stitched_images/stitched*.{png}")
       |> Enum.map(&String.replace_prefix(&1, "priv/static", ""))
       |> Enum.with_index()
-      |> Enum.find(fn {img, id} -> id == id end)
+      |> Enum.find(fn {img, id} -> id == String.to_integer(imgid) end)
       |> elem(0)
       |> String.replace_prefix("/images/stitched_images/", "")
 
@@ -91,6 +91,6 @@ defmodule ServerWeb.StitchingInspectLive do
       "rm -r #{Path.wildcard("priv/static/images/stitched_images/")}/#{image_to_delete}"
     )
 
-    {:noreply, socket}
+    {:noreply, socket |> push_navigate(to: ~p"/stitching_inspect")}
   end
 end

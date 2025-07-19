@@ -38,10 +38,10 @@ defmodule ServerWeb.Components.Navigate.NavigateSettings do
           />
           <.input
             id="boundary_sanga_start"
-            label="Boundary Sanga Start"
             field={@navigate_settings_form[:boundary_sanga_start]}
             type="number"
             value={@settings.boundary_sanga_start}
+            hidden
           />
           <.input
             id="boundary_sanga_end"
@@ -106,6 +106,7 @@ defmodule ServerWeb.Components.Navigate.NavigateSettings do
 
   def handle_event("validate", params, socket) do
     Settings.update(1, params)
+    Process.send_after(self(), :update_info, 0)
 
     {:noreply,
      push_event(

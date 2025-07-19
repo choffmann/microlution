@@ -23,14 +23,14 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
               <span class="bi-arrow-left fs-4"></span>
             </button>
 
-            <button
+            <%!-- <button
               class="btn btn-outline-primary"
               phx-click="sanga-stop"
               phx-target={@myself}
               disable
             >
               <span class="bi-sign-stop fs-4"></span>
-            </button>
+            </button> --%>
 
             <button
               class="btn btn-outline-primary"
@@ -62,9 +62,6 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
 
             <p class="">{@sanga_step_size}</p>
           </div>
-          <p>Current Sanga X: {@settings.current_sanga_x}</p>
-          <p>Current Sanga Start: {@settings.boundary_sanga_start}</p>
-          <p>Current Sanga End: {@settings.boundary_sanga_end}</p>
           <button class="btn btn-outline-primary" phx-click="set-sanga-start" phx-target={@myself}>Set Sanga Start 0</button>
           <p class="h5" style="color: red;">{@sanga_message}</p>
         </div>
