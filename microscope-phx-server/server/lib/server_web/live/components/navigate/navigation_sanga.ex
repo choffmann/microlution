@@ -101,6 +101,16 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
     sanga_step_size = socket.assigns.sanga_step_size
     settings = Settings.get_settings!(1)
 
+    if settings.current_sanga_x == nil or settings.current_sanga.y == nil or
+         settings.boundary_sanga_end == nil or settings.boundary_sanga_start == nil do
+      Settings.update(1, %{
+        "current_sanga_x" => 0,
+        "current_sanga_y" => 0,
+        "boundary_sanga_start" => 0,
+        "boundary_sanga_end" => 0
+      })
+    end
+
     socket =
       if os == :win32 do
         socket |> assign(:sanga_message, "Sanga ist unter Windows nicht unterstützt.")
