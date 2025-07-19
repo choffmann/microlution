@@ -95,4 +95,14 @@ defmodule Server.Autofocus do
         {:error, ""}
     end
   end
+
+  def move_to_home() do
+    settings = Settings.get_settings!(1)
+
+    Settings.update(1, %{
+      "current_z" => 0
+    })
+
+    Sanga.Board.safe_move_stage_z(settings.current_z * -1)
+  end
 end
