@@ -304,7 +304,7 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
       System.cmd(
         "python3",
         [
-          "/home/pi/niklas/microlution/stitching/stitching_like_stitch2d.py",
+          "/home/pi/niklas/microlution/stitching/stitching_orb.py",
           "/home/pi/niklas/microlution/microscope-phx-server/server/priv/static/images/stitched_images/"
         ],
         stderr_to_stdout: true

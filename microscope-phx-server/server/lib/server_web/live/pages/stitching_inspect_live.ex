@@ -88,7 +88,7 @@ defmodule ServerWeb.StitchingInspectLive do
       |> String.replace_prefix("/images/stitched_images/", "")
 
     System.shell(
-      "rm -r #{Path.wildcard("priv/static/images/stitched_images/")}#{image_to_delete}"
+      "rm -r #{Path.wildcard("priv/static/images/stitched_images/")}/#{image_to_delete}"
     )
 
     {:noreply, socket}

@@ -201,7 +201,7 @@ def save_tile_with_overlap_keypoints(tile, overlap_px, out_dir):
 def main():
     start=time.time()
     zip_path=sys.argv[1]
-    folder=extract_zip(zip_path)
+    folder=zip_path
     orb=cv2.ORB_create(nfeatures=2000)
     tiles={}
     for f in os.listdir(folder):
