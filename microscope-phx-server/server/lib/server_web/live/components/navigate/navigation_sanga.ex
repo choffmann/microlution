@@ -101,7 +101,7 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
     sanga_step_size = socket.assigns.sanga_step_size
     settings = Settings.get_settings!(1)
 
-    if settings.current_sanga_x == nil or settings.current_sanga.y == nil or
+    if settings.current_sanga_x == nil or
          settings.boundary_sanga_end == nil or settings.boundary_sanga_start == nil do
       Settings.update(1, %{
         "current_sanga_x" => 0,
