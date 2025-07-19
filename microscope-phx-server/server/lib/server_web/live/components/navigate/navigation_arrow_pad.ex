@@ -129,9 +129,6 @@ defmodule ServerWeb.Components.Navigate.NavigationArrowPad do
           <p>Current X: {@settings.current_x}</p>
           <p>Current Y: {@settings.current_y}</p>
           <p>Current Z: {@settings.current_z}</p>
-          <p>Current Sanga X: {@settings.current_sanga_x}</p>
-          <p>Current Sanga Start: {@settings.boundary_sanga_start}</p>
-          <p>Current Sanga End: {@settings.boundary_sanga_end}</p>
         </div>
       </div>
     </div>

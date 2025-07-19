@@ -61,6 +61,9 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
 
             <p class="">{@sanga_step_size}</p>
           </div>
+          <p>Current Sanga X: {@settings.current_sanga_x}</p>
+          <p>Current Sanga Start: {@settings.boundary_sanga_start}</p>
+          <p>Current Sanga End: {@settings.boundary_sanga_end}</p>
 
           <p class="h5" style="color: red;">{@sanga_message}</p>
         </div>
@@ -110,36 +113,31 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
       })
     end
 
-    socket =
-      if os == :win32 do
-        socket |> assign(:sanga_message, "Sanga ist unter Windows nicht unterstützt.")
-      else
-        # Sanga.Board.start_link()
+    if os == :win32 do
+      socket |> assign(:sanga_message, "Sanga ist unter Windows nicht unterstützt.")
+    else
+      cond do
+        dir == "forwards" ->
+          if settings.current_sanga_x + sanga_step_size < settings.boundary_sanga_end do
+            Sanga.Board.safe_move_slider(sanga_step_size)
 
-        cond do
-          dir == "forwards" ->
-            if settings.current_sanga_x + sanga_step_size < settings.boundary_sanga_end do
-              Sanga.Board.safe_move_slider(sanga_step_size)
+            Settings.update(1, %{
+              "current_sanga_x" => settings.current_sanga_x + sanga_step_size
+            })
+          end
 
-              Settings.update(1, %{
-                "current_sanga_x" => settings.current_sanga_x + sanga_step_size
-              })
-            end
+        dir != "forwards" ->
+          if settings.current_sanga_x + sanga_step_size > settings.boundary_sanga_start do
+            Sanga.Board.safe_move_slider(-sanga_step_size)
 
-          dir != "forwards" ->
-            if settings.current_sanga_x + sanga_step_size > settings.boundary_sanga_start do
-              Sanga.Board.safe_move_slider(-sanga_step_size)
-
-              Settings.update(1, %{
-                "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
-              })
-            end
-        end
-
-        # Sanga.Board.stop()
-        socket
+            Settings.update(1, %{
+              "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
+            })
+          end
       end
+    end
 
+    socket = socket |> assign(:settings, Settings.get_settings!(1))
     {:noreply, socket}
   end
 
