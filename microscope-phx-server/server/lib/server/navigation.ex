@@ -23,7 +23,7 @@ defmodule Server.Navigation do
       "current_y" => settings.current_y + move_in_direction.y
     })
 
-    # move_sanga(move_in_direction)
+    move_sanga(move_in_direction)
 
     update_minimap(direction, step_size)
   end
