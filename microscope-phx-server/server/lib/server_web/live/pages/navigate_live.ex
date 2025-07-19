@@ -10,7 +10,6 @@ defmodule ServerWeb.NavigateLive do
     <div class="row h-100 sidebar-2">
       <div class="col-3 ml-3">
         <div class="row h-100 d-flex flex-column" style="border-right: 1px solid gray;">
-                <.flash_group flash={@flash} />
           <%= if @show_settings do %>
             <.live_component
               module={ServerWeb.Components.Navigate.NavigateSettings}
