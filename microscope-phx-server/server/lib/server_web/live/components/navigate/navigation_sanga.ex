@@ -105,7 +105,6 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
          settings.boundary_sanga_end == nil or settings.boundary_sanga_start == nil do
       Settings.update(1, %{
         "current_sanga_x" => 0,
-        "current_sanga_y" => 0,
         "boundary_sanga_start" => 0,
         "boundary_sanga_end" => 0
       })
@@ -119,7 +118,7 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
 
         cond do
           dir == "forwards" ->
-            if settings.boundary_sanga_end + sanga_step_size < settings.boundary_sanga_end do
+            if settings.current_sanga_x + sanga_step_size < settings.boundary_sanga_end do
               Sanga.Board.safe_move_slider(sanga_step_size)
 
               Settings.update(1, %{
@@ -128,7 +127,7 @@ defmodule ServerWeb.Components.Navigate.NavigationSanga do
             end
 
           dir != "forwards" ->
-            if settings.boundary_sanga_start + sanga_step_size < settings.boundary_sanga_start do
+            if settings.current_sanga_x + sanga_step_size > settings.boundary_sanga_start do
               Sanga.Board.safe_move_slider(-sanga_step_size)
 
               Settings.update(1, %{
