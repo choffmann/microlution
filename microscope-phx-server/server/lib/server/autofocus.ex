@@ -80,7 +80,7 @@ defmodule Server.Autofocus do
           "current_z" => settings.current_z + focus_step_size
         })
 
-        # Sanga.Board.safe_move_stage_z(focus_step_size)
+        Sanga.Board.safe_move_stage_z(focus_step_size)
         {:info, ""}
 
       focus_step_size < 0 and settings.current_z + focus_step_size > -settings.boundary_z ->
@@ -88,7 +88,7 @@ defmodule Server.Autofocus do
           "current_z" => settings.current_z + focus_step_size
         })
 
-        # Sanga.Board.safe_move_stage_z(focus_step_size)
+        Sanga.Board.safe_move_stage_z(focus_step_size)
         {:info, ""}
 
       true ->
