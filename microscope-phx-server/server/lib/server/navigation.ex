@@ -109,17 +109,7 @@ defmodule Server.Navigation do
       "minimap_y" => 0
     })
 
-    case HTTPoison.post(
-           Api.move_to_in_image_coords(),
-           move_in_direction |> Jason.encode!(),
-           [{"Content-Type", "application/json"}]
-         ) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        body
-
-      _ ->
-        []
-    end
+    move_sanga(move_in_direction)
   end
 
   def set_home() do
