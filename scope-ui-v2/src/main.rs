@@ -1,8 +1,4 @@
-use std::{
-    fmt::Debug,
-    sync::{Arc, mpsc},
-    time::Duration,
-};
+use std::{fmt::Debug, sync::mpsc, time::Duration};
 
 use display_interface_spi::SPIInterface;
 use embedded_graphics::{
@@ -21,10 +17,10 @@ use linux_embedded_hal::{
     Delay, SpidevDevice,
     spidev::{SpiModeFlags, Spidev, SpidevOptions},
 };
-use log::debug;
+use log::{debug, error};
 use rppal::gpio::Gpio;
 use scope_ui::{
-    client::{AppClient, AppConfig, OpenFlexurePosition, OpenflexureAxis},
+    client::{AppClient, AppConfig, OpenflexureAxis},
     display::{
         Flushable,
         ili9341::{DisplaySize240x320, Ili9341, Orientation},
@@ -75,6 +71,7 @@ async fn main() {
     app.setup().await;
     std::thread::sleep(Duration::from_secs(3));
     app.clear();
+    app.draw().unwrap();
 
     // run poll input in other thread
     let (event_tx, event_rx) = mpsc::channel();
@@ -201,12 +198,6 @@ where
         debug!("switch control mode to {}", self.contol_mode);
     }
 
-    fn update_states(&mut self, data: OpenFlexurePosition) {
-        self.selections[0].value = data.x;
-        self.selections[1].value = data.y;
-        self.selections[2].value = data.z;
-    }
-
     fn draw_menu(&mut self) -> anyhow::Result<()> {
         let display_area = self.display.bounding_box();
 
@@ -331,7 +322,7 @@ where
             )
             .append(
                 LinearLayout::horizontal(Chain::new(slider).append(Text::new(
-                    format!("{}", self.selections[3].value).as_str(),
+                    "<   >",
                     Point::zero(),
                     text_style,
                 )))
@@ -379,6 +370,15 @@ where
                 0 => OpenflexureAxis::X,
                 1 => OpenflexureAxis::Y,
                 2 => OpenflexureAxis::Z,
+                3 => {
+                    let _response = self
+                        .client
+                        .move_slider(true)
+                        .await
+                        .map_err(|e| error!("failed to move slider {:?}", e));
+
+                    return;
+                }
                 _ => return,
             };
             let _ = self
@@ -399,6 +399,14 @@ where
                 0 => OpenflexureAxis::X,
                 1 => OpenflexureAxis::Y,
                 2 => OpenflexureAxis::Z,
+                3 => {
+                    let _ = self
+                        .client
+                        .move_slider(false)
+                        .await
+                        .map_err(|e| error!("failed to move slider {:?}", e));
+                    return;
+                }
                 _ => return,
             };
             let _ = self

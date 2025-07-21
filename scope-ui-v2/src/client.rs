@@ -14,6 +14,12 @@ pub struct OpenFlexurePosition {
     pub z: i64,
 }
 
+#[derive(serde::Serialize)]
+struct MoveStageRequest<'a> {
+    direction: &'a str,
+    step_size: i64,
+}
+
 impl TryFrom<serde_json::Value> for OpenFlexurePosition {
     type Error = anyhow::Error;
 
@@ -83,6 +89,22 @@ impl AppClient {
             MoveDirection::Neg(axis) => self.move_axis(axis, -200),
         }
         .await
+    }
+
+    pub async fn move_slider(&self, up: bool) -> anyhow::Result<reqwest::Response> {
+        let url = "http://localhost:4000/api/move/slider";
+        let direction = if up { "left" } else { "right" };
+        let body = MoveStageRequest {
+            direction,
+            step_size: 200,
+        };
+        reqwest::Client::new()
+            .post(url)
+            .header("content-type", "application/json")
+            .json(&body)
+            .send()
+            .await
+            .context("Failed to post move axis request")
     }
 
     async fn move_axis(
