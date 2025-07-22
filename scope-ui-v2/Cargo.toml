@@ -1,0 +1,24 @@
+[package]
+name = "scope-ui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+embedded-graphics = "0.8.1"
+embedded-graphics-framebuf = "0.5.0"
+embedded-layout = "0.4.2"
+ili9341 = "0.6.0"
+rppal = { version = "0.22.1", features = ["hal"] }
+linux-embedded-hal = "0.4.0"
+display-interface-spi = "0.5.0"
+anyhow = "1.0.98"
+embedded-hal = "1.0.0"
+display-interface = "0.5.0"
+log = "0.4.27"
+env_logger = "0.11.8"
+reqwest = { version = "0.12.20", features = ["json"] }
+url = "2.5.4"
+serde_json = "1.0.140"
+tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread", "time"] }
+serde = { version = "1.0.219", features = ["derive"] }
+
