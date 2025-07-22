@@ -111,9 +111,9 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
         <button class="btn btn-outline-primary" phx-click="start-stitching" phx-target={@myself}>
           Start
         </button>
-        <button class="btn btn-outline-primary" phx-click="stop-stitching" phx-target={@myself}>
+        <%!-- <button class="btn btn-outline-primary" phx-click="stop-stitching" phx-target={@myself}>
           Stop
-        </button>
+        </button> --%>
       </div>
     </div>
     """
@@ -133,7 +133,8 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
     autofocus_types = [
       %{type: "fast", id: :fast},
       %{type: "medium", id: :medium},
-      %{type: "fine", id: :fine}
+      %{type: "fine", id: :fine},
+      %{type: "none", id: :none}
     ]
 
     selected_autofocus_type =
@@ -141,6 +142,7 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
         "fast" -> 0
         "medium" -> 1
         "fine" -> 2
+        "none" -> 3
       end
 
     socket =
@@ -183,22 +185,33 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
       "stitching_autofocus_type" => params["autofocus_type"]
     })
 
+    settings = Settings.get_settings!(1)
+
+    selected_autofocus_type =
+      case settings.stitching_autofocus_type do
+        "fast" -> 0
+        "medium" -> 1
+        "fine" -> 2
+        "none" -> 3
+      end
+
     socket =
       socket
       |> assign(:stitching_on, true)
-      |> assign(:autofocus_type, params["autofocus_type"])
-      |> assign(:sleep_time, String.to_integer(params["sleep_time"]))
-      |> assign(:step_size, String.to_integer(params["step_size"]))
-      |> assign(:x_steps, String.to_integer(params["x_steps"]))
-      |> assign(:y_steps, String.to_integer(params["y_steps"]))
+      |> assign(:autofocus_type, settings.stitching_autofocus_type)
+      |> assign(:sleep_time, settings.stitching_sleep_time)
+      |> assign(:step_size, settings.stitching_step_size)
+      |> assign(:x_steps, settings.stitching_x_steps)
+      |> assign(:y_steps, settings.stitching_y_steps)
+      |> assign(:selected_autofocus_type, selected_autofocus_type)
 
     {:noreply,
      push_event(
        socket,
        "update-stitching-preview-boxes",
        %{
-         x: Jason.encode!(String.to_integer(params["x_steps"])),
-         y: Jason.encode!(String.to_integer(params["y_steps"]))
+         x: Jason.encode!(settings.stitching_x_steps),
+         y: Jason.encode!(settings.stitching_y_steps)
        }
      )}
   end
@@ -215,7 +228,10 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
       ) do
     Enum.map(start_num..end_num, fn x ->
       if stitching_on do
-        Autofocus.autofocus(autofocus_type)
+        if autofocus_type != "none" do
+          Autofocus.autofocus(autofocus_type)
+        end
+
         :timer.sleep(sleep_time * 1000)
 
         datetime_string = DateTime.utc_now() |> DateTime.to_string()
