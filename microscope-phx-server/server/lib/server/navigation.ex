@@ -24,7 +24,7 @@ defmodule Server.Navigation do
     })
 
     Process.send_after(self(), :update_info, 0)
-    move_sanga(move_in_direction)
+    # move_sanga(move_in_direction)
 
     update_minimap(direction, step_size)
   end
@@ -75,7 +75,7 @@ defmodule Server.Navigation do
       if settings.current_y + move_in_direction.y > settings.boundary_y or
            settings.current_x + move_in_direction.x > settings.boundary_x do
         IO.inspect("Boundary Positive X")
-        {no_minimap_update, :error, ""}
+        {no_minimap_update, :error, "Boundary"}
       else
         if settings.boundary_y - settings.current_y >= move_in_direction.y or
              settings.boundary_x - settings.current_x >= move_in_direction.x do
@@ -86,7 +86,7 @@ defmodule Server.Navigation do
     else
       if settings.current_y <= -settings.boundary_y or settings.current_x <= -settings.boundary_x do
         IO.inspect("Boundary Negative X")
-        {no_minimap_update, :error, ""}
+        {no_minimap_update, :error, "Boundary"}
       else
         if -settings.boundary_y <= settings.current_y + move_in_direction.y or
              -settings.boundary_x <= settings.current_x + move_in_direction.x do
@@ -269,13 +269,14 @@ defmodule Server.Navigation do
           end
 
         dir != "forwards" ->
-          if settings.current_sanga_x + -sanga_step_size >= settings.boundary_sanga_start do
-            Sanga.Board.safe_move_slider(-sanga_step_size)
+          # if settings.current_sanga_x + -sanga_step_size >= settings.boundary_sanga_start do
+          Sanga.Board.safe_move_slider(-sanga_step_size)
 
-            Settings.update(1, %{
-              "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
-            })
-          end
+          Settings.update(1, %{
+            "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
+          })
+
+          # end
       end
 
       Process.send_after(self(), :update_info, 0)
