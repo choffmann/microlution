@@ -187,10 +187,10 @@ defmodule Server.Navigation do
   end
 
   def move_sanga(direction) do
-    Sanga.Board.safe_move_all_axes(0, 0, 0, 0)
+    # Sanga.Board.safe_move_all_axes(0, 0, 0, 0)
     Sanga.Board.safe_move_all_axes(direction.x, direction.y, 0, 0)
 
-    Process.send_after(self(), :update_info, 0)
+    # Process.send_after(self(), :update_info, 0)
   end
 
   def get_navigate_direction_minimap(direction, step_size, navigation_minimap) do
