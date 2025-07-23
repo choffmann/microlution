@@ -37,4 +37,4 @@ npm-debug.log
 
 /node_modules/
 
-*.sqlite3*
+# *.sqlite3*
