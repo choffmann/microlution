@@ -94,7 +94,7 @@ defmodule Server.Autofocus do
         {:info, ""}
 
       true ->
-        {:error, ""}
+        {:error, "Boundary Z, choose smaller movement. For more info, check boundaries"}
     end
   end
 

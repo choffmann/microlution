@@ -75,7 +75,9 @@ defmodule Server.Navigation do
       if settings.current_y + move_in_direction.y > settings.boundary_y or
            settings.current_x + move_in_direction.x > settings.boundary_x do
         IO.inspect("Boundary Positive X")
-        {no_minimap_update, :error, "Boundary"}
+
+        {no_minimap_update, :error,
+         "Boundary X/Y, choose smaller movement. For more info, check boundaries"}
       else
         if settings.boundary_y - settings.current_y >= move_in_direction.y or
              settings.boundary_x - settings.current_x >= move_in_direction.x do
@@ -86,7 +88,9 @@ defmodule Server.Navigation do
     else
       if settings.current_y <= -settings.boundary_y or settings.current_x <= -settings.boundary_x do
         IO.inspect("Boundary Negative X")
-        {no_minimap_update, :error, "Boundary"}
+
+        {no_minimap_update, :error,
+         "Boundary X/Y, choose smaller movement. For more info, check boundaries"}
       else
         if -settings.boundary_y <= settings.current_y + move_in_direction.y or
              -settings.boundary_x <= settings.current_x + move_in_direction.x do
@@ -279,7 +283,9 @@ defmodule Server.Navigation do
       end
 
       Process.send_after(self(), :update_info, 0)
-      {:move, "Approaching Slider Boundary, move smaller steps"}
+
+      {:error,
+       "Approaching Slider Boundary, choose smaller movement. For more info, check boundaries"}
     end
   end
 end

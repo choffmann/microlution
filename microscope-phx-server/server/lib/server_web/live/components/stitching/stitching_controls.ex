@@ -341,6 +341,7 @@ defmodule ServerWeb.Components.Stitching.StitchingControls do
       )
     end)
 
+    Process.send(self(), {:stitching_flash, output, code}, 0)
     {:noreply, socket}
   end
 end
