@@ -86,7 +86,8 @@ defmodule Server.Navigation do
         end
       end
     else
-      if settings.current_y <= -settings.boundary_y or settings.current_x <= -settings.boundary_x do
+      if settings.current_y + move_in_direction.y <= -settings.boundary_y or
+           settings.current_x + move_in_direction.x <= -settings.boundary_x do
         IO.inspect("Boundary Negative X")
 
         {no_minimap_update, :error,
@@ -188,6 +189,8 @@ defmodule Server.Navigation do
   def move_sanga(direction) do
     Sanga.Board.safe_move_all_axes(0, 0, 0, 0)
     Sanga.Board.safe_move_all_axes(direction.x, direction.y, 0, 0)
+
+    Process.send_after(self(), :update_info, 0)
   end
 
   def get_navigate_direction_minimap(direction, step_size, navigation_minimap) do
@@ -270,6 +273,9 @@ defmodule Server.Navigation do
             Settings.update(1, %{
               "current_sanga_x" => settings.current_sanga_x + sanga_step_size
             })
+          else
+            {:error,
+             "Approaching Slider Boundary, choose smaller movement. For more info, check boundaries"}
           end
 
         dir != "forwards" ->
@@ -279,13 +285,11 @@ defmodule Server.Navigation do
             Settings.update(1, %{
               "current_sanga_x" => settings.current_sanga_x + -sanga_step_size
             })
+          else
+            {:error,
+             "Approaching Slider Boundary, choose smaller movement. For more info, check boundaries"}
           end
       end
-
-      Process.send_after(self(), :update_info, 0)
-
-      {:error,
-       "Approaching Slider Boundary, choose smaller movement. For more info, check boundaries"}
     end
   end
 end
