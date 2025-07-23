@@ -79,7 +79,12 @@ defmodule ServerWeb.NavigateLive do
 
   def handle_info({:create_flash, type, msg}, socket) do
     Process.send_after(self(), :clear_flash, 5000)
-    {:noreply, put_flash(socket, type, msg)}
+
+    if type == :error do
+      {:noreply, put_flash(socket, type, msg)}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_info(:update_info, socket) do

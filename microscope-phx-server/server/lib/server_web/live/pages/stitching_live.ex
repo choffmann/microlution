@@ -52,4 +52,8 @@ defmodule ServerWeb.StitchingLive do
 
     {:noreply, socket}
   end
+
+  def handle_info({:stitching_flash, type, msg}, socket) do
+    {:noreply, put_flash(socket, type, msg)}
+  end
 end

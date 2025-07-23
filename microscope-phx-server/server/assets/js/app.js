@@ -47,9 +47,9 @@ hooks.MiniMap = {
       let height = 5
       let canvas_width = canvas.width
       let canvas_height = canvas.height
-      let minimap_step_size_modifier = 2300 // 2300 = 0.5cm bei 42000 Steps Richtung Runter
-      let current_x = ((canvas_width / 2) - width / 2 + 4);
-      let current_y = (((canvas_height / 2) - height / 2) + 20 + 4);
+      let minimap_step_size_modifier = 2300 / 2 // 2300 = 0.5cm bei 42000 Steps Richtung Runter
+      let current_x = ((canvas_width / 2) - width / 2 );
+      let current_y = (((canvas_height / 2) - height / 2)) + 20 + 1;
       current_x += this.el.dataset.minimapx / minimap_step_size_modifier;
       current_y += this.el.dataset.minimapy / minimap_step_size_modifier;
       let border_start_point_x = (canvas_width / 2)
@@ -76,7 +76,6 @@ hooks.MiniMap = {
       show_mm_features = JSON.parse(payload.show_mm_features)
       ctx.clearRect(0,0,500,500)
       if (show_mm_features) {
-        ctx.clearRect(0,0,500,500)
         ctx.beginPath();
         border_radius_x = JSON.parse(payload.boundaryx);
         border_radius_y = JSON.parse(payload.boundaryy);
@@ -99,8 +98,8 @@ hooks.MiniMap = {
       ctx.clearRect(0,0,500,500)
       if (show_mm_features) {
         ctx.beginPath();
-        current_x = ((canvas_width / 2) - width / 2 + 4);
-        current_y = (((canvas_height / 2) - height / 2) + 20 + 4);
+        current_x = ((canvas_width / 2) - width / 2);
+        current_y = (((canvas_height / 2) - height / 2) + 20 + 1);
         ctx.rect(current_x, current_y, width, height);
         ctx.lineWidth = lineWidth;
         ctx.strokeStyle = "red";

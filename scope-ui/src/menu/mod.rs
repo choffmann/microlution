@@ -12,21 +12,12 @@ use embedded_menu::{
     theme::Theme,
     Menu, MenuState, MenuStyle,
 };
-use log::{error, info};
+use log::{debug, error};
 use position::Position;
 
 use crate::input::{InputEvent, MenuInput};
 
 mod position;
-
-macro_rules! draw_menu {
-    ($menu:expr, $display:expr, $name:expr) => {
-        $menu.update($display);
-        if let Err(_e) = $menu.draw($display) {
-            eprintln!("Failed to draw {} menu", $name);
-        }
-    };
-}
 
 #[derive(Clone, Copy)]
 struct MenuTheme;
@@ -161,12 +152,12 @@ fn update_position(pos: &mut Position, dir: ControlAction) {
 pub fn handle_event(event: MenuEvent, data: &mut MenuData) {
     match event {
         MenuEvent::Navigate(view) => {
-            info!("switching to view {:?}", view);
+            debug!("switching to view {:?}", view);
             data.current_view = view
         }
         MenuEvent::ControlMode(mode) => match mode {
             ScopeControlMode::SampleChanger(dir) => {
-                info!(
+                debug!(
                     "control sample changer. pos: {:?}, dir: {:?}",
                     data.sample_changer_pos, dir
                 );
@@ -178,7 +169,7 @@ pub fn handle_event(event: MenuEvent, data: &mut MenuData) {
                     MicroscopeAxis::Y => &mut data.microscope_y_pos,
                     MicroscopeAxis::Z => &mut data.microscope_z_pos,
                 };
-                info!(
+                debug!(
                     "control sample changer. pos: {:?}, dir: {:?}",
                     data.sample_changer_pos, dir
                 );
@@ -186,11 +177,11 @@ pub fn handle_event(event: MenuEvent, data: &mut MenuData) {
             }
         },
         MenuEvent::InputLock(v) => {
-            info!("Lock input. scope: {:?}", v);
+            debug!("Lock input. scope: {:?}", v);
             data.lock_input = Some(v)
         }
         MenuEvent::InputUnlock => {
-            info!("Unlock input");
+            debug!("Unlock input");
             data.lock_input = None
         }
         MenuEvent::Quit => exit(0),
